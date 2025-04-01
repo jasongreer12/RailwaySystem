@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "parser.h"
 
 #define LINE_MAX 256
 #define ITEM_COUNT_MAX 64
 #define ITEM_CHAR_MAX 64
+
+/*This module is designed to be called from any other module within the program.
+It can be tested directly by calling its executable with a command line argument
+"train" or "intersection". ie: ./parser train -or- ./parser intersection
+This will open the trains.txt or intersections.txt file respectively in the
+text_files directory.
+
+Currently, it will open the file and print the text as it is parsed. Next phase
+will be to write these data to an array and return it.*/
+
 
 // Call this function with the mode "train" or "intersection"
 void parseFile(const char *mode) {
