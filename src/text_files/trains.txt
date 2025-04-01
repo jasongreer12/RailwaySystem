@@ -1,0 +1,4 @@
+Train1:IntersectionA,IntersectionB,IntersectionC
+Train1:IntersectionB,IntersectionD,IntersectionE
+Train1:IntersectionC,IntersectionD,IntersectionA
+Train1:IntersectionE,IntersectionB,IntersectionD
