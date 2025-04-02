@@ -46,11 +46,9 @@ int main() {
     // Print individual train entries
     printf("Train Entries:\n");
     for (int i = 0; i < trainCount; i++) {
-        printf("Train ID: %s, Route Length: %d, Route: ", trains[i].id, trains[i].routeLength);
         for (int j = 0; j < trains[i].routeLength; j++) {
             printf("%s%s", trains[i].route[j], (j < trains[i].routeLength - 1) ? " -> " : "");
         }
-        printf("\n");
     }
 
     // Print all train entries

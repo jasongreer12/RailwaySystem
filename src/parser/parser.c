@@ -81,6 +81,7 @@ void printTrainEntries(const TrainEntry trains[], int count) {
             printf("  Route %d: %s\n", j + 1, trains[i].route[j]);
         }
     }
+    printf("\n");
 }
 
 //INTERSECTION PARSER
@@ -128,4 +129,5 @@ void printIntersectionEntries(const IntersectionEntry intersections[], int count
         printf("  Capacity:  %d\n", intersections[i].capacity);
         printf("  Available: %d\n", intersections[i].available);
     }
+    printf("\n");
 }
