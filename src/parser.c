@@ -85,11 +85,6 @@ void printTrainEntries(const TrainEntry trains[], int count) {
 
 //INTERSECTION PARSER
 
-// Getter function for train entries
-int getIntersections(IntersectionEntry intersections[]) {
-    return parseIntersectionsFile("text_files/intersections.txt", intersections);
-}
-
 // Function to print the intersection entries for debugging
 static int parseIntersectionsFile(const char *filepath, IntersectionEntry intersections[]) {
     FILE *file = fopen(filepath, "r");
@@ -121,7 +116,10 @@ static int parseIntersectionsFile(const char *filepath, IntersectionEntry inters
     return count;
 }
 
-
+// Getter function for train entries
+int getIntersections(IntersectionEntry intersections[]) {
+    return parseIntersectionsFile("text_files/intersections.txt", intersections);
+}
 
 // Function to print the intersection entries for debugging
 void printIntersectionEntries(const IntersectionEntry intersections[], int count) {

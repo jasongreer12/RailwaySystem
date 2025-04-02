@@ -13,6 +13,7 @@ src
 |--parser.h
 |--parser_test.c //unit test file for parser
 |--MakeFile //compiles parser_test.c
+|--ptest //exe compiled from parser_test.c. generates and prints successfully
 
 
 # Development Timeline
