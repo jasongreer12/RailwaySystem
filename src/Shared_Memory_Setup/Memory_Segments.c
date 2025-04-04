@@ -1,4 +1,5 @@
 // Author Steve Kuria
+// Group B
 // skuria@okstate.edu
 // 4-3-2025
 #include <stdio.h>
