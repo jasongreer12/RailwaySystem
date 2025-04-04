@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -Iparser
 LDFLAGS = -pthread -lrt
-MAIN_SRC = main.c
+MAIN_SRC = Railway_System.c
 MAIN_OBJ = $(MAIN_SRC:.c=.o)
 MAIN_TARGET = iLikeTrains
 PARSER_DIR = parser

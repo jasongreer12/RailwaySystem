@@ -1,6 +1,8 @@
 /*
 Author: Jarett Woodard
 Group: B
+Email: jarett.woodard@okstate.edu
+Date: 4.4.2025
 */
 #ifndef PARSER_H
 #define PARSER_H

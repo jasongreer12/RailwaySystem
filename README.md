@@ -25,7 +25,8 @@ parser.c and parser.h completed. defines structs for train and intersection obje
 Separated parser files into separate directory and updated main to look there for the header file. This way, if changes are made to these functions, the local make file can be run to recompile and perform isolated unit testing
 Compilation of main is successful after final push to main. - Jarett
 
-## main
+## Railway_System.c
+This is the main file. This file makes calls to the libraries created by the members of the group.
 ### Compilation
 use the Makefile to compile and run for testing. In the terminal within the src directory, enter the following
 ```bash

@@ -1,3 +1,10 @@
+/*
+Author: Jarett Woodard
+Group: B
+Email: jarett.woodard@okstate.edu
+Date: 4.4.2025
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
