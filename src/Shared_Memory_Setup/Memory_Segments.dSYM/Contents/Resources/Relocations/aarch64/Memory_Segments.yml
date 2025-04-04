@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/steve/nm2025GHD/RailwaySystem/src/Shared_Memory_Setup/Memory_Segments'
+relocations:     []
+...
