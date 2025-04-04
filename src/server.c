@@ -1,6 +1,7 @@
 // Jason Greer
 // jason.greer@okstate.edu
 // 4/3/25
+// GROUP: B
 // This file handles ACQUIRE/RELEASE requests from trains via message queues and grants access to intersections.
 
 // server.c
