@@ -8,10 +8,20 @@
 #include "Basic_IPC_Workflow/ipc.h" // Zach Oyer
 #include "parser/parser.h" // Jarett Woodard
 #include "Basic_IPC_Workflow/intersection_locks.h" // Jake Pinell
+#include "Shared_Memory_Setup/Memory_Segments.h" // Steve Kuria
 
 //This file uses code from server.c authored by Jason Greer
 
 int main(){
+    // Initialize shared memory for intersections
+    size_t shm_size;
+    SharedIntersection *shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+    if (!shared_intersections) {
+        fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
+        return 1;
+    }
+    printf("[SERVER] Shared memory initialized.\n");
+
     // create array of train structs and count
     TrainEntry trains[LINE_MAX];
     int trainCount = getTrains(trains);
@@ -84,6 +94,10 @@ int main(){
          exit(EXIT_FAILURE);
      }
      printf("[SERVER] Message queue removed. Exiting.\n");
+
+     // Cleanup Shared memory
+    destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
+    printf("[SERVER] Shared memory cleaned up.\n");
  
      return 0;
 }
