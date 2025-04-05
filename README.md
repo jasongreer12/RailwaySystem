@@ -24,6 +24,8 @@ Configured to print parsed text. Can be tested directly by running the .exe with
 parser.c and parser.h completed. defines structs for train and intersection objects. Extracts text from the respective text files located in the text_files directory. Each line is used to create a new instance of train or intersection struct.
 Separated parser files into separate directory and updated main to look there for the header file. This way, if changes are made to these functions, the local make file can be run to recompile and perform isolated unit testing
 Compilation of main is successful after final push to main. - Jarett
+### 4.3.2025
+server.c is completed. It is set up to handle ACQUIRE/RELEASE requests from trains via message queues and grants access for intersections. This is some of the code used in Railway_System.c - Jason Greer
 
 ## Railway_System.c
 This is the main file. This file makes calls to the libraries created by the members of the group.
@@ -33,7 +35,11 @@ use the Makefile to compile and run for testing. In the terminal within the src 
 make clean
 make
 ```
-When compilation is complete run
+When compilation is complete run in the first terminal
 ```bash
 ./iLikeTrains
+```
+and in the second terminal run
+```bash
+./train_sim
 ```
