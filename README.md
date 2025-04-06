@@ -26,7 +26,8 @@ Separated parser files into separate directory and updated main to look there fo
 Compilation of main is successful after final push to main. - Jarett
 ### 4.3.2025
 server.c is completed. It is set up to handle ACQUIRE/RELEASE requests from trains via message queues and grants access for intersections. This is some of the code used in Railway_System.c - Jason Greer
-
+### 4.4.2025
+Memory_Segments.c completed. Implements a shared memory segment for intersection synchronization, initializing mutexes and named semaphores. - Steve
 ## Railway_System.c
 This is the main file. This file makes calls to the libraries created by the members of the group.
 ### Compilation
