@@ -2,18 +2,40 @@
 ## File Structure
 
 src
+|
+|  //main operational files
+|--|Railway_System.c
+|--|Makefile
+|--|server.c //original code used as server. this has 
+|   been copied into Railway_System.c. server.c is no longer
+|   used in running the file.
+|
+|
+|  //text files for import
 |------text_files
 |      |--intersections.txt
 |      |--trains.txt
 |
-|--main.c
+|  //Parser Modules
+|------parser
+|      |--parser.c
+|      |--parser.h
+|      |--parser_test.c //unit test file for parser (not used in compiled product)
+|      |--MakeFile //compiles parser_test.c (not used in compiled product)
+|      |--ptest //exe compiled from parser_test.c. generates and print
+|         successfully (not used in compiled product)
 |
-|  //Parser modules
-|--parser.c
-|--parser.h
-|--parser_test.c //unit test file for parser
-|--MakeFile //compiles parser_test.c
-|--ptest //exe compiled from parser_test.c. generates and prints successfully
+|  //Shared Memory Modules 
+|------Shared_Memory_Setup
+|      |--Memory_Segments.c
+|      |--Memory_Segments.h
+|
+|  //IPC modules
+|------Basic_IPC_Workflow
+       |--intersection_locks.c
+       |--intersection_locks.h
+       |--ipc.c
+       |--ipc.h
 
 
 # Development Timeline
