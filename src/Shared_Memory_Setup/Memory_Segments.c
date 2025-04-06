@@ -1,7 +1,9 @@
+// Memory_Segments.c
 // Author Steve Kuria
 // Group B
 // skuria@okstate.edu
 // 4-3-2025
+// This code initializes a shared memory segment containing multiple intersection structures—with each structure configured with a mutex and semaphore—and provides functions to set up and clean up these resources using POSIX shared memory APIs.
 #include "Memory_Segments.h"
 #include <stdio.h>
 #include <stdlib.h>

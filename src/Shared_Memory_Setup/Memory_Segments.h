@@ -1,7 +1,9 @@
+// Memory_Segments.h
 // Author Steve Kuria
 // Group B
 // skuria@okstate.edu
 // 4-4-2025
+// This header file defines a shared memory structure for intersections—comprising a mutex, a semaphore pointer, capacity, and semaphore name—and declares functions to initialize and clean up this shared memory resource.
 #ifndef MEMORY_SEGMENTS_H
 #define MEMORY_SEGMENTS_H
 

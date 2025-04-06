@@ -1,5 +1,9 @@
-//Author Zachary Oyer
 // ipc.c
+// Author: Zachary Oyer
+// Date: 4-4-2025
+// Implements the send_message() function for sending ACQUIRE and RELEASE
+// messages using System V message queues. Used by train processes to request
+// and release intersections.
 #include <stdio.h>
 #include <string.h>
 #include <sys/msg.h>

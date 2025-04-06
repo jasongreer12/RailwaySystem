@@ -1,5 +1,7 @@
 // intersection_locks.c
 // Author: Jake Pinell
+// Group: B
+// Email: jpinell@okstate.edu
 // Date: 4-4-2025
 // Implementation of mutex and semaphore locks for railway intersections
 
