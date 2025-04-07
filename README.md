@@ -1,6 +1,6 @@
 # Train Simulation
 ## File Structure
-
+```
 src
 |
 |  //main operational files
@@ -36,7 +36,10 @@ src
        |--intersection_locks.h
        |--ipc.c
        |--ipc.h
-
+       |--Train_Movement_Simulation.c
+       |--Train_Movement_Simulation_Test.c //Non-essential file that can be used in place of Train_Movement_Simulation 
+                                           //for testing that trains fork successfully and that message queues are working.
+```
 
 # Development Timeline
 ## parser.c
