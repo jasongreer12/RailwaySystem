@@ -1,6 +1,7 @@
 // ipc.h
 // Author: Zachary Oyer
 // Date: 4-4-2025
+// Group B
 // for System V IPC used to simulate train-intersection communication.
 #ifndef IPC_H
 #define IPC_H

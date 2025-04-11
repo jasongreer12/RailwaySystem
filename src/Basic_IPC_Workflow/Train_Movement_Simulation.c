@@ -1,6 +1,7 @@
 // Train_Movement_Simulation.c
 // Author: Zachary Oyer
 // Date: 4-4-2025
+// Group B
 // Simulates train processes requesting and releasing intersections using
 // IPC. Forks multiple train processes and runs a central server loop to
 // receive and display IPC messages.
