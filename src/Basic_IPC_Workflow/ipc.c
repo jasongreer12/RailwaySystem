@@ -21,3 +21,5 @@ void send_message(int msgid, int train_id, const char* intersection, const char*
         perror("msgsnd failed");
     }
 }
+
+

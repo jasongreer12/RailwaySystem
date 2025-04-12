@@ -1,46 +1,68 @@
-CC = gcc
-CFLAGS = -Wall -g -Iparser
-LDFLAGS = -pthread -lrt
-MAIN_SRC = Railway_System.c
-MAIN_OBJ = $(MAIN_SRC:.c=.o)
-MAIN_TARGET = iLikeTrains
-PARSER_DIR = parser
+CC       = gcc
+CFLAGS   = -Wall -g -Iparser -IShared_Memory_Setup -Ilogger
+LDFLAGS  = -pthread -lrt
 
-# Add intersection locks files
-LOCKS_SRC = Basic_IPC_Workflow/intersection_locks.c
-LOCKS_OBJ = $(LOCKS_SRC:.c=.o)
+PARSER_DIR      = parser
+PARSER_OBJ      = $(PARSER_DIR)/parser.o
 
-# Shared memory 
-MEMORY_SRC = Shared_Memory_Setup/Memory_Segments.c
-MEMORY_OBJ = $(MEMORY_SRC:.c=.o)
-CFLAGS += -IShared_Memory_Setup
+# Shared memory
+MEMORY_SRC      = Shared_Memory_Setup/Memory_Segments.c
+MEMORY_OBJ      = $(MEMORY_SRC:.c=.o)
 
-# New sources for the server and test client
-SERVER_SRC = server.c $(LOCKS_SRC)
-SERVER_OBJ = $(SERVER_SRC:.c=.o)
-SERVER_TARGET = server
+# Intersection locks
+LOCKS_SRC       = Basic_IPC_Workflow/intersection_locks.c
+LOCKS_OBJ       = $(LOCKS_SRC:.c=.o)
 
-# Train simulation target
-TRAIN_SIM_SRC = Basic_IPC_Workflow/Train_Movement_Simulation.c $(LOCKS_SRC)
-TRAIN_SIM_OBJ = $(TRAIN_SIM_SRC:.c=.o)
-TRAIN_SIM_TARGET = train_sim
+# Logger
+LOG_SRC         = logger/logger.c
+LOG_OBJ         = $(LOG_SRC:.c=.o)
 
-# Build all targets: main project, server, test client, and train simulation
-all: $(MAIN_TARGET) $(SERVER_TARGET) $(TRAIN_SIM_TARGET)
+# Main “server” binary (was Railway_System.c)
+MAIN_SRC        = Railway_System.c
+MAIN_OBJ        = $(MAIN_SRC:.c=.o)
+MAIN_TARGET     = iLikeTrains   
 
-# Main target build (your existing rules)
-$(MAIN_TARGET): $(MAIN_OBJ) $(MEMORY_OBJ)
+# Train simulator
+TRAIN_SRC       = Basic_IPC_Workflow/Train_Movement_Simulation.c
+TRAIN_OBJ       = $(TRAIN_SRC:.c=.o)
+TRAIN_TARGET    = train_sim
+
+.PHONY: all clean parser
+
+all: parser $(MAIN_TARGET) $(TRAIN_TARGET)
+
+# Build parser.o
+parser:
 	$(MAKE) -C $(PARSER_DIR)
-	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(MEMORY_OBJ) $(PARSER_DIR)/parser.o $(LDFLAGS)
 
-# Server target build - now with locks
-$(SERVER_TARGET): $(SERVER_OBJ)
-	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJ) $(LDFLAGS)
+$(PARSER_OBJ): | parser
 
-# Train simulation target
-$(TRAIN_SIM_TARGET): $(TRAIN_SIM_OBJ)
-	$(CC) $(CFLAGS) -o $@ $(TRAIN_SIM_OBJ) $(LDFLAGS)
+# Build the main server binary
+$(MAIN_TARGET): $(MAIN_OBJ) \
+                $(PARSER_OBJ) \
+                $(MEMORY_OBJ) \
+                $(LOCKS_OBJ) \
+                $(LOG_OBJ)
+	$(CC) $(CFLAGS) -o $@ \
+	    $(MAIN_OBJ) \
+	    $(PARSER_OBJ) \
+	    $(MEMORY_OBJ) \
+	    $(LOCKS_OBJ) \
+	    $(LOG_OBJ) \
+	    $(LDFLAGS)
+
+# Build the train simulation binary
+$(TRAIN_TARGET): $(TRAIN_OBJ) \
+                 $(PARSER_OBJ) \
+                 $(LOCKS_OBJ) \
+                 $(LOG_OBJ)
+	$(CC) $(CFLAGS) -o $@ \
+	    $(TRAIN_OBJ) \
+	    $(PARSER_OBJ) \
+	    $(LOCKS_OBJ) \
+	    $(LOG_OBJ) \
+	    $(LDFLAGS)
 
 clean:
-	rm -f $(MAIN_OBJ) $(MAIN_TARGET) $(SERVER_OBJ) $(SERVER_TARGET) $(TRAIN_SIM_OBJ) $(TRAIN_SIM_TARGET) $(LOCKS_OBJ) $(MEMORY_OBJ)
+	rm -f *.o $(MAIN_TARGET) $(TRAIN_TARGET)
 	$(MAKE) -C $(PARSER_DIR) clean
