@@ -15,6 +15,8 @@ src
 |------text_files
 |      |--intersections.txt
 |      |--trains.txt
+|      |--trainsRandomizer.c // non-essential file that updates trains.txt have a random route
+|      |--intersectionsRandomizer.c // non-essential file that updates intersections.txt to have a random size
 |
 |  //Parser Modules
 |------parser
