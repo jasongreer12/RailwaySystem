@@ -3,36 +3,87 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include "../Basic_IPC_Workflow/ipc.h"
 #include "../parser/parser.h"
+#include "../Shared_Memory_Setup/Memory_Segments.h"
 
 /**
- * Initializes the CSV logger and creates a new CSV file with timestamp
- * Format: train_run_mmddyyyy_hhmmss.csv
- * @return FILE* pointer to the opened CSV file, NULL if error
+ * CSV Structure:
+ * 
+ * [System Columns - Automatically Added]
+ * - sys_time: Nanosecond precision timestamp
+ * - calling_file: Source file
+ * - calling_function: Function name
+ * 
+ * [Event Data - Fixed Columns]
+ * - train_id: Train identifier
+ * - intersection_id: Intersection name
+ * - action: Operation (ACQUIRE/RELEASE/etc)
+ * - status: Result (GRANT/DENY/OK/FAIL)
+ * - pid: Process ID
+ * - error_msg: Error details if any
+ * 
+ * [State Data - JSON Formatted]
+ * - resource_state: Shared memory state
+ * - deadlock_info: Graph state
+ * - train_state: Route info
+ * - perf_metrics: Performance data
+ */
+
+/**
+ * Initialize CSV logger with new timestamped file
  */
 FILE* csv_logger_init(void);
 
 /**
- * Logs train movement data to the CSV file
- * @param file Pointer to the opened CSV file
- * @param train_id ID of the train
- * @param intersection_id ID of the intersection
- * @param action Action being performed (ACQUIRE, RELEASE, etc)
- * @param status Result of the action (GRANT, DENY, OK, FAIL)
- * @param timestamp Time of the event
- * @return 0 on success, -1 on error
+ * Log event with full state information
+ * Handles all struct-to-JSON conversion internally
+ * @param file Open CSV file
+ * @param train_id Train number
+ * @param intersection_id Intersection name
+ * @param action Operation being performed
+ * @param status Result status
+ * @param pid Process ID
+ * @param error_msg Error description
+ * @param resource_state SharedIntersection pointer (NULL ok)
+ * @param train_state TrainEntry pointer (NULL ok)
+ * @param current_position Position in route
+ * @param has_deadlock Deadlock detected flag
+ * @param node_count Graph node count
+ * @param cycle_path Deadlock cycle description
+ * @param edge_type Graph edge type
+ * @param lock_time_ns Lock timing
+ * @param failed_attempts Failed lock count
  */
-int log_train_event_csv(FILE* file, 
-                       int train_id, 
-                       const char* intersection_id, 
-                       const char* action, 
-                       const char* status,
-                       const char* timestamp);
+int log_train_event_csv_ex(FILE* file, 
+                          int train_id,
+                          const char* intersection_id,
+                          const char* action,
+                          const char* status,
+                          pid_t pid,
+                          const char* error_msg,
+                          const SharedIntersection* resource_state,
+                          const TrainEntry* train_state,
+                          int current_position,
+                          bool has_deadlock,
+                          int node_count,
+                          const char* cycle_path,
+                          const char* edge_type,
+                          long lock_time_ns,
+                          int failed_attempts);
 
 /**
- * Closes the CSV logger
- * @param file Pointer to the opened CSV file
+ * Legacy logging function - prefer log_train_event_csv_ex
+ */
+int log_train_event_csv(FILE* file, const char* csv_data, 
+                       const char* calling_file, const char* calling_func);
+
+#define LOG_CSV(file, data) log_train_event_csv(file, data, __FILE__, __func__)
+
+/**
+ * Close the CSV logger
  */
 void csv_logger_close(FILE* file);
 

@@ -1,0 +1,8 @@
+sys_time,calling_file,calling_function,step,Train ID,Intersection,Action,Status
+2025-04-13 08:24:31.975962872,test_csv_logger.c,main,start,,,INIT,OK
+2025-04-13 08:24:31.976012490,test_csv_logger.c,test_function1,step1,Train1,IntersectionA,ACQUIRE,PENDING
+2025-04-13 08:24:32.076123294,test_csv_logger.c,test_function1,step2,Train1,IntersectionA,ACQUIRE,GRANT
+2025-04-13 08:24:32.076194032,test_csv_logger.c,test_function2,step1,Train2,IntersectionB,ACQUIRE,PENDING
+2025-04-13 08:24:32.126313294,test_csv_logger.c,test_function2,step2,Train2,IntersectionB,ACQUIRE,DENY
+2025-04-13 08:24:32.126389321,test_csv_logger.c,main,step3,,,,ERROR
+2025-04-13 08:24:32.126403231,test_csv_logger.c,main,
