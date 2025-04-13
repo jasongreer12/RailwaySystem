@@ -79,3 +79,6 @@ and in the second terminal run
 ```bash
 ./train_sim
 ```
+### Compilation Testing
+#### 4.13.2025
+Compilation was tested locally and confirmed working on csx1.cs.okstate.edu
