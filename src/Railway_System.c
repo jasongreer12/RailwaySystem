@@ -169,18 +169,19 @@ int main()
             // Process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
+                struct timespec start, end;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                long lock_time_ns = 0;  // Initialize before use
+
                 // Attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
                 if (add_holder(shared_intersections, idx, req.train_id))
                 {
-                    struct timespec start, end;
-                clock_gettime(CLOCK_MONOTONIC, &start);
-                
-                int result = acquire_lock(&locks[idx]);
-                
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                long lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+                    int result = acquire_lock(&locks[idx]);
+                    
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
 
-                if (result == 0)
+                    if (result == 0)
                     {
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
                         LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
@@ -242,11 +243,12 @@ int main()
             {
                 struct timespec start, end;
                 clock_gettime(CLOCK_MONOTONIC, &start);
+                long lock_time_ns = 0;  // Initialize before use
                 
                 int result = release_lock(&locks[idx]);
                 
                 clock_gettime(CLOCK_MONOTONIC, &end);
-                long lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+                lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
 
                 if (result == 0)
                 {
