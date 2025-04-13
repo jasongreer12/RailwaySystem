@@ -1,3 +1,10 @@
+/*
+Author: Jarett Woodard
+Group: B
+Email: jarett.woodard@okstate.edu
+Date: 4.12.2025
+*/
+
 #ifndef CSV_LOGGER_H
 #define CSV_LOGGER_H
 

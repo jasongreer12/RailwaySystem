@@ -1,2 +1,0 @@
-sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,deadlock_info,train_state,perf_metrics
-2025-04-13 13:20:22.216909193,Railway_System.c,main,0,SYSTEM,STARTUP,OK,198990,,{},{"has_deadlock":false;"node_count":0;"cycle_path":"";"edge_type":""},{},{"lock_time_ns":0;"failed_attempts":0}

@@ -1,3 +1,10 @@
+/*
+Author: Jarett Woodard
+Group: B
+Email: jarett.woodard@okstate.edu
+Date: 4.12.2025
+*/
+
 #define _POSIX_C_SOURCE 199309L
 #include "csv_logger.h"
 #include <stdlib.h>
