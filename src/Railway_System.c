@@ -48,6 +48,18 @@ int getIntersectionIndex(const char *name, IntersectionEntry *entries, int count
 }
 
 
+// Helper function: Given an intersection name, find its index from the parsed intersections.
+// Assumes IntersectionEntry has a 'name' field.
+int getIntersectionIndex(const char *name, IntersectionEntry *entries, int count) {
+    for (int i = 0; i < count; i++) {
+        if (strncmp(name, entries[i].id, MAX_NAME) == 0) {
+            return i;
+        }
+    }
+    return -1;  // not found
+}
+
+
 int main(){
     // Initialize shared memory for intersections
     size_t shm_size;
