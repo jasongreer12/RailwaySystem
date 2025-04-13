@@ -15,7 +15,7 @@
 #include <semaphore.h>
 #include <string.h>
 
-// max length of intersection name
+// max length of intersection name (increased to accommodate "/sem_" prefix)
 #define MAX_NAME_LENGTH 32
 
 // struct to represent an intersection with synchronization primitives

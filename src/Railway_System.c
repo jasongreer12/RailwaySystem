@@ -54,23 +54,31 @@ int main()
         exit(1);
     }
 
-    // Log system startup
+    // Log system startup using system message format
+    Message sys_msg = {
+        .mtype = 1,
+        .train_id = 0
+    };
+    strncpy(sys_msg.intersection, "SYSTEM", MAX_NAME);
+    strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
+    sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
+
     log_train_event_csv_ex(csv_file,
-        0,                    // train_id
-        "SYSTEM",            // intersection_id
-        "STARTUP",           // action
-        "OK",               // status
-        getpid(),           // pid
-        NULL,               // error_msg
-        NULL,               // resource_state
-        NULL,               // train_state
-        0,                  // current_position
-        false,             // has_deadlock
-        0,                 // node_count
-        NULL,              // cycle_path
-        NULL,              // edge_type
-        0,                 // lock_time_ns
-         0);                // failed_attempts
+        sys_msg.train_id,
+        sys_msg.intersection,
+        sys_msg.action,
+        "OK",               
+        getpid(),           
+        NULL,               
+        NULL,               
+        NULL,               
+        0,                  
+        false,             
+        0,                 
+        NULL,              
+        NULL,              
+        0,                 
+        0);                
 
     // set up shared memory (for whatever data you need there)
     size_t shm_size;
@@ -348,6 +356,26 @@ int main()
     destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
     LOG_SERVER("Shared memory cleaned up");
 
+    // Before cleanup, log shutdown using system message format
+    strncpy(sys_msg.action, "SHUTDOWN", sizeof(sys_msg.action) - 1);  // Leave space for null terminator
+    sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';  // Ensure null termination
+    log_train_event_csv_ex(csv_file,
+        sys_msg.train_id,
+        sys_msg.intersection,
+        sys_msg.action,
+        "OK",
+        getpid(),
+        NULL,
+        NULL,
+        NULL,
+        0,
+        false,
+        0,
+        NULL,
+        NULL,
+        0,
+        0);
+
     // Log final system state
     log_train_event_csv_ex(csv_file,
         0,                    // train_id
@@ -370,5 +398,5 @@ int main()
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
     log_close();
     csv_logger_close(csv_file);
-    return 0;
+    exit(0);  // Ensure process terminates after cleanup
 }

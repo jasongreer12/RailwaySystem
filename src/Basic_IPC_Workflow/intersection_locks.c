@@ -33,7 +33,7 @@ bool init_semaphore_lock(Intersection *intersection) {
     }
     
     // Generate a unique semaphore name based on intersection name
-    snprintf(intersection->semName, MAX_NAME_LENGTH, "/sem_%s", intersection->name);
+    snprintf(intersection->semName, MAX_NAME_LENGTH, "/sem_%.26s", intersection->name);
     sem_unlink(intersection->semName);
     
     // Create the named semaphore with initial value = capacity
