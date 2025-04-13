@@ -166,10 +166,13 @@ int main()
         }
         else
         {
-            // ACQUIRE or RELEASE on locks[idx]
+            // Process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
-                struct timespec start, end;
+                // Attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
+                if (add_holder(shared_intersections, idx, req.train_id))
+                {
+                    struct timespec start, end;
                 clock_gettime(CLOCK_MONOTONIC, &start);
                 
                 int result = acquire_lock(&locks[idx]);
@@ -178,10 +181,18 @@ int main()
                 long lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
 
                 if (result == 0)
-                {
-                    strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
-                    LOG_SERVER("GRANTED %s to Train %d",
-                               req.intersection, req.train_id);
+                    {
+                        strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
+                        LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
+                    }
+                    else
+                    {
+                        // If local lock acquisition fails (unexpected), remove the holder and queue the train.
+                        remove_holder(shared_intersections, idx, req.train_id);
+                        enqueue_waiter(shared_intersections, idx, req.train_id);
+                        strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
+                        LOG_SERVER("WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
+                    }
 
                     // Log successful acquisition with timing and state
                     log_train_event_csv_ex(csv_file,
@@ -203,9 +214,10 @@ int main()
                 }
                 else
                 {
-                    strncpy(resp.action, "DENY", sizeof(resp.action) - 1);
-                    LOG_SERVER("DENIED %s to Train %d",
-                               req.intersection, req.train_id);
+                    // Intersection at capacity: add the train to the waiting queue
+                    enqueue_waiter(shared_intersections, idx, req.train_id);
+                    strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
+                    LOG_SERVER("WAITING: %s full, Train %d queued", req.intersection, req.train_id);
 
                     // Log failed acquisition attempt
                     log_train_event_csv_ex(csv_file,
@@ -226,8 +238,8 @@ int main()
                          1);
                 }
             }
-            else
-            { // RELEASE
+            else // RELEASE
+            {
                 struct timespec start, end;
                 clock_gettime(CLOCK_MONOTONIC, &start);
                 
@@ -238,9 +250,26 @@ int main()
 
                 if (result == 0)
                 {
-                    strncpy(resp.action, "OK", sizeof(resp.action) - 1);
-                    LOG_SERVER("Released %s from Train %d",
-                               req.intersection, req.train_id);
+                    if (remove_holder(shared_intersections, idx, req.train_id))
+                    {
+                        // After releasing, check if any train is waiting for this intersection.
+                        int next_train = dequeue_waiter(shared_intersections, idx);
+                        if (next_train != -1)
+                        {
+                            // Grant the waiting train by adding it as a holder and (optionally)
+                            // notifying it via a message. Here we simply log the event.
+                            add_holder(shared_intersections, idx, next_train);
+                            LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
+                            // Note: In a complete system, you would send a message to next_train to notify it.
+                        }
+                        strncpy(resp.action, "OK", sizeof(resp.action) - 1);
+                        LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                    }
+                    else
+                    {
+                        strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
+                        LOG_SERVER("Failed to remove Train %d from holders of %s", req.train_id, req.intersection);
+                    }
 
                     // Log successful release with timing
                     log_train_event_csv_ex(csv_file,
@@ -263,8 +292,7 @@ int main()
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-                    LOG_SERVER("Failed to release %s from Train %d",
-                               req.intersection, req.train_id);
+                    LOG_SERVER("Failed to release %s from Train %d", req.intersection, req.train_id);
 
                     // Log failed release
                     log_train_event_csv_ex(csv_file,
