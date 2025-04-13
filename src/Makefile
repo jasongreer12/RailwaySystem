@@ -14,7 +14,7 @@ LOCKS_SRC       = Basic_IPC_Workflow/intersection_locks.c
 LOCKS_OBJ       = $(LOCKS_SRC:.c=.o)
 
 # Logger
-LOG_SRC         = logger/logger.c
+LOG_SRC         = logger/logger.c logger/csv_logger.c
 LOG_OBJ         = $(LOG_SRC:.c=.o)
 
 # Main “server” binary (was Railway_System.c)

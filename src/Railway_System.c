@@ -3,8 +3,9 @@ Author: Jarett Woodard
 Group: B
 Email: jarett.woodard@okstate.edu
 Date: 4.4.2025
+Updated 4/13/2025
 */
-
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -12,8 +13,10 @@ Date: 4.4.2025
 #include <sys/msg.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include "logger/logger.h"                         // Jason Greer
+#include "logger/csv_logger.h"                     // Jarett Woodard
 #include "Basic_IPC_Workflow/ipc.h"                // Zach Oyer
 #include "parser/parser.h"                         // Jarett Woodard
 #include "Basic_IPC_Workflow/intersection_locks.h" // Jake Pinell
@@ -40,8 +43,34 @@ static int find_intersection_index(const IntersectionEntry entries[],
 
 int main()
 {
+    // Initialize both loggers
     log_init("simulation.log", 1);
     LOG_SERVER("Initializing Train Movement Simulation");
+    
+    FILE* csv_file = csv_logger_init();
+    if (!csv_file) {
+        LOG_SERVER("Failed to initialize CSV logger");
+        fprintf(stderr, "[SERVER] Failed to initialize CSV logger.\n");
+        exit(1);
+    }
+
+    // Log system startup
+    log_train_event_csv_ex(csv_file,
+        0,                    // train_id
+        "SYSTEM",            // intersection_id
+        "STARTUP",           // action
+        "OK",               // status
+        getpid(),           // pid
+        NULL,               // error_msg
+        NULL,               // resource_state
+        NULL,               // train_state
+        0,                  // current_position
+        false,             // has_deadlock
+        0,                 // node_count
+        NULL,              // cycle_path
+        NULL,              // edge_type
+        0,                 // lock_time_ns
+         0);                // failed_attempts
 
     // set up shared memory (for whatever data you need there)
     size_t shm_size;
@@ -140,32 +169,120 @@ int main()
             // ACQUIRE or RELEASE on locks[idx]
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
-                if (acquire_lock(&locks[idx]) == 0)
+                struct timespec start, end;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                
+                int result = acquire_lock(&locks[idx]);
+                
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                long lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+
+                if (result == 0)
                 {
                     strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
                     LOG_SERVER("GRANTED %s to Train %d",
                                req.intersection, req.train_id);
+
+                    // Log successful acquisition with timing and state
+                    log_train_event_csv_ex(csv_file,
+                        req.train_id,
+                        req.intersection,
+                        "ACQUIRE",
+                        "GRANT",
+                        getpid(),
+                        NULL,
+                        &shared_intersections[idx],
+                        &trains[req.train_id - 1],
+                        0,
+                        false,
+                        0,
+                        NULL,
+                        "GRANT",
+                        lock_time_ns,
+                         0);
                 }
                 else
                 {
                     strncpy(resp.action, "DENY", sizeof(resp.action) - 1);
                     LOG_SERVER("DENIED %s to Train %d",
                                req.intersection, req.train_id);
+
+                    // Log failed acquisition attempt
+                    log_train_event_csv_ex(csv_file,
+                        req.train_id,
+                        req.intersection,
+                        "ACQUIRE",
+                        "DENY",
+                        getpid(),
+                        "At capacity",
+                        &shared_intersections[idx],
+                        &trains[req.train_id - 1],
+                        0,
+                        false,
+                        0,
+                        NULL,
+                        "DENY",
+                        lock_time_ns,
+                         1);
                 }
             }
             else
             { // RELEASE
-                if (release_lock(&locks[idx]) == 0)
+                struct timespec start, end;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                
+                int result = release_lock(&locks[idx]);
+                
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                long lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+
+                if (result == 0)
                 {
                     strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                     LOG_SERVER("Released %s from Train %d",
                                req.intersection, req.train_id);
+
+                    // Log successful release with timing
+                    log_train_event_csv_ex(csv_file,
+                        req.train_id,
+                        req.intersection,
+                        "RELEASE",
+                        "OK",
+                        getpid(),
+                        NULL,
+                        &shared_intersections[idx],
+                        &trains[req.train_id - 1],
+                        0,
+                        false,
+                        0,
+                        NULL,
+                        "RELEASE",
+                        lock_time_ns,
+                         0);
                 }
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
                     LOG_SERVER("Failed to release %s from Train %d",
                                req.intersection, req.train_id);
+
+                    // Log failed release
+                    log_train_event_csv_ex(csv_file,
+                        req.train_id,
+                        req.intersection,
+                        "RELEASE",
+                        "FAIL",
+                        getpid(),
+                        "Failed to release lock",
+                        &shared_intersections[idx],
+                        &trains[req.train_id - 1],
+                        0,
+                        false,
+                        0,
+                        NULL,
+                        "FAIL",
+                        lock_time_ns,
+                         0);
                 }
             }
         }
@@ -201,8 +318,27 @@ int main()
     destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
     LOG_SERVER("Shared memory cleaned up");
 
+    // Log final system state
+    log_train_event_csv_ex(csv_file,
+        0,                    // train_id
+        "SYSTEM",            // intersection_id
+        "SHUTDOWN",          // action
+        "OK",               // status
+        getpid(),           // pid
+        NULL,               // error_msg
+        NULL,               // resource_state
+        NULL,               // train_state
+        0,                  // current_position
+        false,             // has_deadlock
+        0,                 // node_count
+        NULL,              // cycle_path
+        NULL,              // edge_type
+        0,                 // lock_time_ns
+         0);                // failed_attempts
+
     // final log & exit
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
     log_close();
+    csv_logger_close(csv_file);
     return 0;
 }

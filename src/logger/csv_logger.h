@@ -29,7 +29,6 @@
  * - resource_state: Shared memory state
  * - deadlock_info: Graph state
  * - train_state: Route info
- * - perf_metrics: Performance data
  */
 
 /**
@@ -57,7 +56,9 @@ FILE* csv_logger_init(void);
  * @param lock_time_ns Lock timing
  * @param failed_attempts Failed lock count
  */
-int log_train_event_csv_ex(FILE* file, 
+int log_train_event_csv_ex_impl(FILE* file, 
+                          const char* calling_file,
+                          const char* calling_func,
                           int train_id,
                           const char* intersection_id,
                           const char* action,
@@ -73,6 +74,9 @@ int log_train_event_csv_ex(FILE* file,
                           const char* edge_type,
                           long lock_time_ns,
                           int failed_attempts);
+
+#define log_train_event_csv_ex(file, ...) \
+    log_train_event_csv_ex_impl(file, __FILE__, __func__, __VA_ARGS__)
 
 /**
  * Legacy logging function - prefer log_train_event_csv_ex
