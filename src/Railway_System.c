@@ -252,23 +252,10 @@ int main()
     destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
     LOG_SERVER("Shared memory cleaned up");
 
-    // Log final system state
-    log_train_event_csv_ex(csv_file,
-        0,                    // train_id
-        "SYSTEM",            // intersection_id
-        "SHUTDOWN",          // action
-        "OK",               // status
-        getpid(),           // pid
-        NULL,               // error_msg
-        NULL,               // resource_state
-        NULL,               // train_state
-        0,                  // current_position
-        false,             // has_deadlock
-        0,                // node_count
-        NULL,             // cycle_path
-        NULL);            // edge_type
+    //final system state
+    log_train_event_csv_ex(csv_file,0,"SYSTEM","SHUTDOWN","OK",getpid(),NULL,NULL,NULL,0,false,0,NULL,NULL);
 
-    // final log & exit
+    //close all loggers
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
     log_close();
     csv_logger_close(csv_file);

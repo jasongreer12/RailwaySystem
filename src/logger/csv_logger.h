@@ -9,26 +9,30 @@
 #include "../parser/parser.h"
 #include "../Shared_Memory_Setup/Memory_Segments.h"
 
-/**
- * CSV Structure:
- * 
- * [System Columns - Automatically Added]
- * - sys_time: Nanosecond precision timestamp
- * - calling_file: Source file
- * - calling_function: Function name
- * 
- * [Event Data - Fixed Columns]
- * - train_id: Train identifier
- * - intersection_id: Intersection name
- * - action: Operation (ACQUIRE/RELEASE/etc)
- * - status: Result (GRANT/DENY/OK/FAIL)
- * - pid: Process ID
- * - error_msg: Error details if any
- * 
- * [State Data - JSON Formatted]
- * - resource_state: Shared memory state
- * - deadlock_info: Graph state
- * - train_state: Route info
+/*
+Column layout:
+
+SYSTEM COLUMNS (audomatic)
+0.  sys_time
+1.  calling_file
+2.  calling_function
+
+PROVIDED FROM CALLER:
+3.  train_id
+4.  intersection_id
+5.  action
+6.  status
+7.  pid
+
+Function specific
+8.  error_msg
+9.  resource_state **struct
+10. train_state, **struct 
+11. current_position,
+12. has_deadlock,
+13. node_count,
+14. cycle_path, 
+15. edge_type
  */
 
 FILE* csv_logger_init(void);
@@ -60,4 +64,4 @@ int log_train_event_csv(FILE* file, const char* csv_data,
 
 void csv_logger_close(FILE* file);
 
-#endif /* CSV_LOGGER_H */
+#endif

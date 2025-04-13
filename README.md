@@ -1,5 +1,6 @@
 # Train Simulation
 ## File Structure
+There are files included that were used to test certain functions. These files are generally not listed. If a file is not listed, it is not critical to the operation of the program.
 ```
 src
 |
@@ -34,13 +35,20 @@ src
 |
 |  //IPC modules
 |------Basic_IPC_Workflow
-       |--intersection_locks.c
-       |--intersection_locks.h
-       |--ipc.c
-       |--ipc.h
-       |--Train_Movement_Simulation.c
-       |--Train_Movement_Simulation_Test.c //Non-essential file that can be used in place of Train_Movement_Simulation 
-                                           //for testing that trains fork successfully and that message queues are working.
+|      |--intersection_locks.c
+|      |--intersection_locks.h
+|      |--ipc.c
+|      |--ipc.h
+|      |--Train_Movement_Simulation.c
+|      |--Train_Movement_Simulation_Test.c //Non-essential file that can be used in place of Train_Movement_Simulation 
+|                                          //for testing that trains fork successfully and that message queues are working.
+|
+|------logger
+       |--logger.c
+       |--logger.h
+       |--csv_logger.c
+       |--csv_logger.h
+
 ```
 
 # Development Timeline

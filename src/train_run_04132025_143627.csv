@@ -1,0 +1,2 @@
+sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,has_deadlock,train_state,node_count,cycle_path,edge_type
+2025-04-13 14:36:37.274508078,Railway_System.c,main,0,SYSTEM,SHUTDOWN,OK,217305,,{},false,{},0,,

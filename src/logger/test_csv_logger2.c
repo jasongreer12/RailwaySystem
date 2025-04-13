@@ -3,8 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "csv_logger.h"
-#include "../Basic_IPC_Workflow/intersection_locks.h"
-#include "../Shared_Memory_Setup/Memory_Segments.h"
+
 
 // Test intersection-specific logging
 void test_intersection_logging(FILE* file) {
