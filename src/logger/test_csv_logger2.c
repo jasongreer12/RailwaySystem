@@ -32,9 +32,7 @@ void test_intersection_logging(FILE* file) {
         false,              // has_deadlock
         3,                  // node_count
         NULL,               // cycle_path
-        "REQUEST",           // edge_type
-        50000,              // lock_time_ns
-        0);                 // failed_attempts
+        "REQUEST");          // edge_type
 
     usleep(50000); // 50ms delay
 
@@ -55,9 +53,7 @@ void test_intersection_logging(FILE* file) {
         false,              // has_deadlock
         3,                  // node_count
         NULL,               // cycle_path
-        "REQUEST",           // edge_type
-        75000,              // lock_time_ns
-        1);                 // failed_attempts
+        "REQUEST");          // edge_type
 }
 
 // Only needed if running standalone

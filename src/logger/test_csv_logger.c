@@ -19,7 +19,7 @@ void test_basic_logging(FILE* file) {
         .active_threads = 4
     };
 
-    // Log system startup with metrics in appropriate field
+    // Log system startup
     log_train_event_csv_ex(file,
         0,                    // train_id
         "SYSTEM",            // intersection_id
@@ -33,9 +33,7 @@ void test_basic_logging(FILE* file) {
         false,             // has_deadlock
         0,                  // node_count
         NULL,               // cycle_path
-        NULL,              // edge_type
-        0,                  // lock_time_ns
-         0);                // failed_attempts
+        NULL);             // edge_type
 
     usleep(100000); // 100ms delay
 
@@ -56,9 +54,7 @@ void test_basic_logging(FILE* file) {
         false,             
         0,                  
         NULL,               
-        NULL,              
-        0,                  
-         0);
+        NULL);              
 }
 
 extern void test_intersection_logging(FILE* file);

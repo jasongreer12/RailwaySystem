@@ -63,23 +63,6 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-    log_train_event_csv_ex(csv_file,
-        sys_msg.train_id,
-        sys_msg.intersection,
-        sys_msg.action,
-        "OK",               
-        getpid(),           
-        NULL,               
-        NULL,               
-        NULL,               
-        0,                  
-        false,             
-        0,                 
-        NULL,              
-        NULL,              
-        0,                 
-        0);                
-
     // set up shared memory (for whatever data you need there)
     size_t shm_size;
     SharedIntersection *shared_intersections =
@@ -177,17 +160,10 @@ int main()
             // Process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
-                struct timespec start, end;
-                clock_gettime(CLOCK_MONOTONIC, &start);
-                long lock_time_ns = 0;  // Initialize before use
-
                 // Attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
                 if (add_holder(shared_intersections, idx, req.train_id))
                 {
                     int result = acquire_lock(&locks[idx]);
-                    
-                    clock_gettime(CLOCK_MONOTONIC, &end);
-                    lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
 
                     if (result == 0)
                     {
@@ -203,23 +179,6 @@ int main()
                         LOG_SERVER("WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
                     }
 
-                    // Log successful acquisition with timing and state
-                    log_train_event_csv_ex(csv_file,
-                        req.train_id,
-                        req.intersection,
-                        "ACQUIRE",
-                        "GRANT",
-                        getpid(),
-                        NULL,
-                        &shared_intersections[idx],
-                        &trains[req.train_id - 1],
-                        0,
-                        false,
-                        0,
-                        NULL,
-                        "GRANT",
-                        lock_time_ns,
-                         0);
                 }
                 else
                 {
@@ -227,36 +186,11 @@ int main()
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                     LOG_SERVER("WAITING: %s full, Train %d queued", req.intersection, req.train_id);
-
-                    // Log failed acquisition attempt
-                    log_train_event_csv_ex(csv_file,
-                        req.train_id,
-                        req.intersection,
-                        "ACQUIRE",
-                        "DENY",
-                        getpid(),
-                        "At capacity",
-                        &shared_intersections[idx],
-                        &trains[req.train_id - 1],
-                        0,
-                        false,
-                        0,
-                        NULL,
-                        "DENY",
-                        lock_time_ns,
-                         1);
                 }
             }
             else // RELEASE
             {
-                struct timespec start, end;
-                clock_gettime(CLOCK_MONOTONIC, &start);
-                long lock_time_ns = 0;  // Initialize before use
-                
                 int result = release_lock(&locks[idx]);
-                
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                lock_time_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
 
                 if (result == 0)
                 {
@@ -266,11 +200,9 @@ int main()
                         int next_train = dequeue_waiter(shared_intersections, idx);
                         if (next_train != -1)
                         {
-                            // Grant the waiting train by adding it as a holder and (optionally)
-                            // notifying it via a message. Here we simply log the event.
+                            // Grant the waiting train by adding it as a holder
                             add_holder(shared_intersections, idx, next_train);
                             LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
-                            // Note: In a complete system, you would send a message to next_train to notify it.
                         }
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
@@ -280,47 +212,11 @@ int main()
                         strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
                         LOG_SERVER("Failed to remove Train %d from holders of %s", req.train_id, req.intersection);
                     }
-
-                    // Log successful release with timing
-                    log_train_event_csv_ex(csv_file,
-                        req.train_id,
-                        req.intersection,
-                        "RELEASE",
-                        "OK",
-                        getpid(),
-                        NULL,
-                        &shared_intersections[idx],
-                        &trains[req.train_id - 1],
-                        0,
-                        false,
-                        0,
-                        NULL,
-                        "RELEASE",
-                        lock_time_ns,
-                         0);
                 }
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
                     LOG_SERVER("Failed to release %s from Train %d", req.intersection, req.train_id);
-
-                    // Log failed release
-                    log_train_event_csv_ex(csv_file,
-                        req.train_id,
-                        req.intersection,
-                        "RELEASE",
-                        "FAIL",
-                        getpid(),
-                        "Failed to release lock",
-                        &shared_intersections[idx],
-                        &trains[req.train_id - 1],
-                        0,
-                        false,
-                        0,
-                        NULL,
-                        "FAIL",
-                        lock_time_ns,
-                         0);
                 }
             }
         }
@@ -356,26 +252,6 @@ int main()
     destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
     LOG_SERVER("Shared memory cleaned up");
 
-    // Before cleanup, log shutdown using system message format
-    strncpy(sys_msg.action, "SHUTDOWN", sizeof(sys_msg.action) - 1);  // Leave space for null terminator
-    sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';  // Ensure null termination
-    log_train_event_csv_ex(csv_file,
-        sys_msg.train_id,
-        sys_msg.intersection,
-        sys_msg.action,
-        "OK",
-        getpid(),
-        NULL,
-        NULL,
-        NULL,
-        0,
-        false,
-        0,
-        NULL,
-        NULL,
-        0,
-        0);
-
     // Log final system state
     log_train_event_csv_ex(csv_file,
         0,                    // train_id
@@ -388,11 +264,9 @@ int main()
         NULL,               // train_state
         0,                  // current_position
         false,             // has_deadlock
-        0,                 // node_count
-        NULL,              // cycle_path
-        NULL,              // edge_type
-        0,                 // lock_time_ns
-         0);                // failed_attempts
+        0,                // node_count
+        NULL,             // cycle_path
+        NULL);            // edge_type
 
     // final log & exit
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
