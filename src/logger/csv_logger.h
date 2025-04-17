@@ -16,6 +16,7 @@ Date: 4.12.2025
 #include "../Basic_IPC_Workflow/ipc.h"
 #include "../parser/parser.h"
 #include "../Shared_Memory_Setup/Memory_Segments.h"
+#include "../parser/parser.h"
 
 // Forward declarations of structs used in CsvLogData
 typedef struct SharedIntersection SharedIntersection;

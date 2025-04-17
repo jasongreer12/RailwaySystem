@@ -11,6 +11,8 @@ Date: 4.12.2025
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include "../Shared_Memory_Setup/Memory_Segments.h"
+#include "../parser/parser.h"
 
 /*
 This file is designed to be called for debugging output throughout the program.
