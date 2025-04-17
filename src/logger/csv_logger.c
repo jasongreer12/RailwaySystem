@@ -46,6 +46,29 @@ Function specific
 static void shared_intersection_to_json(char* buffer, size_t size, const SharedIntersection* si);
 static void train_entry_to_json(char* buffer, size_t size, const TrainEntry* te, int current_pos);
 
+// Add a validation function to ensure defaults are applied to CsvLogData
+void validate_csv_log_data(CsvLogData* log_data) {
+    if (!log_data) return;
+
+    // Assign default values to optional fields if they are NULL
+    if (!log_data->intersection_id) log_data->intersection_id = "";
+    if (!log_data->action) log_data->action = "";
+    if (!log_data->status) log_data->status = "";
+    if (!log_data->error_msg) log_data->error_msg = "";
+    if (!log_data->cycle_path) log_data->cycle_path = "";
+    if (!log_data->edge_type) log_data->edge_type = "";
+
+    // Ensure structs are valid or default to empty JSON
+    if (!log_data->resource_state) log_data->resource_state = NULL;
+    if (!log_data->train_state) log_data->train_state = NULL;
+
+    // Default values for integers and booleans
+    if (log_data->train_id < 0) log_data->train_id = -1; // Invalid ID
+    if (log_data->current_position < 0) log_data->current_position = 0;
+    if (log_data->node_count < 0) log_data->node_count = 0;
+    log_data->has_deadlock = log_data->has_deadlock ? true : false;
+}
+
 //intitializes logger instance for current run of program
 FILE* csv_logger_init(void) {
     time_t now;
@@ -72,46 +95,62 @@ FILE* csv_logger_init(void) {
 }
 
 int log_train_event_csv_ex_impl(FILE* file, const char* calling_file, const char* calling_func, int train_id, const char* intersection_id, const char* action, const char* status, pid_t pid, const char* error_msg, const SharedIntersection* resource_state, const TrainEntry* train_state, int current_position, bool has_deadlock, int node_count, const char* cycle_path, const char* edge_type) {
-    
     if (!file) return -1;
 
-    //timestamp each row
+    // Validate and assign defaults to log_data
+    CsvLogData log_data = {
+        .train_id = train_id,
+        .intersection_id = intersection_id,
+        .action = action,
+        .status = status,
+        .pid = pid,
+        .error_msg = error_msg,
+        .resource_state = resource_state,
+        .train_state = train_state,
+        .current_position = current_position,
+        .has_deadlock = has_deadlock,
+        .node_count = node_count,
+        .cycle_path = cycle_path,
+        .edge_type = edge_type
+    };
+    validate_csv_log_data(&log_data);
+
+    // Timestamp each row
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    
-    //increased precision for runtime tracing
+
+    // Increased precision for runtime tracing
     char precise_time[32];
     struct tm *tm_info = localtime(&ts.tv_sec);
     strftime(precise_time, sizeof(precise_time), "%Y-%m-%d %H:%M:%S", tm_info);
     char full_timestamp[48];
     snprintf(full_timestamp, sizeof(full_timestamp), "%s.%09ld", precise_time, ts.tv_nsec);
 
-    //JSON strings for structs
+    // JSON strings for structs
     char resource_json[512];
     char train_json[1024];
 
-    shared_intersection_to_json(resource_json, sizeof(resource_json), resource_state);
-    train_entry_to_json(train_json, sizeof(train_json), train_state, current_position);
+    shared_intersection_to_json(resource_json, sizeof(resource_json), log_data.resource_state);
+    train_entry_to_json(train_json, sizeof(train_json), log_data.train_state, log_data.current_position);
 
-    //CSV line with individual deadlock parameters
+    // CSV line with individual deadlock parameters
     fprintf(file, "%s,%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%s,%d,%s,%s\n", 
             full_timestamp,
             calling_file,
             calling_func,
-            train_id,
-            //Ternary operator: <logical> ? <case if true> : <case if false>
-            intersection_id ? intersection_id : "",
-            action ? action : "",
-            status ? status : "",
-            pid,
-            error_msg ? error_msg : "",
+            log_data.train_id,
+            log_data.intersection_id,
+            log_data.action,
+            log_data.status,
+            log_data.pid,
+            log_data.error_msg,
             resource_json,
-            has_deadlock ? "true" : "false",
+            log_data.has_deadlock ? "true" : "false",
             train_json,
-            node_count,
-            cycle_path ? cycle_path : "",
-            edge_type ? edge_type : "");
-    
+            log_data.node_count,
+            log_data.cycle_path,
+            log_data.edge_type);
+
     fflush(file);
     return 0;
 }

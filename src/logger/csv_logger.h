@@ -9,12 +9,34 @@ Date: 4.12.2025
 #define CSV_LOGGER_H
 
 #include <stdio.h>
-#include <time.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 #include "../Basic_IPC_Workflow/ipc.h"
 #include "../parser/parser.h"
 #include "../Shared_Memory_Setup/Memory_Segments.h"
+
+// Forward declarations of structs used in CsvLogData
+typedef struct SharedIntersection SharedIntersection;
+typedef struct TrainEntry TrainEntry;
+
+// Definition of CsvLogData struct
+typedef struct {
+    int train_id;
+    const char* intersection_id;
+    const char* action;
+    const char* status;
+    pid_t pid;
+    const char* error_msg;
+    const SharedIntersection* resource_state;
+    const TrainEntry* train_state;
+    int current_position;
+    bool has_deadlock;
+    int node_count;
+    const char* cycle_path;
+    const char* edge_type;
+} CsvLogData;
 
 /*
 Column layout:
@@ -71,4 +93,4 @@ int log_train_event_csv(FILE* file, const char* csv_data,
 
 void csv_logger_close(FILE* file);
 
-#endif
+#endif // CSV_LOGGER_H
