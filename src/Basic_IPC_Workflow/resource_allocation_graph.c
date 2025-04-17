@@ -16,8 +16,8 @@ typedef struct {
     int id; // train_id or intersection_id
 } Node;
 
-static int adj[MAX_NODES][MAX_NODES];      // Adjacency matrix
-static Node nodes[MAX_NODES];              // ID mapping
+static int adj[MAX_NODES][MAX_NODES]; // Adjacency matrix
+static Node nodes[MAX_NODES]; // ID mapping
 static int node_count = 0;
 
 static int get_or_create_node(NodeType type, int id);
@@ -87,7 +87,7 @@ static bool dfs(int v, bool* visited, bool* rec_stack) {
     return false;
 }
 
-// Returns node index (creates if doesn't exist)
+// Returns node index and creates if doesn't exist
 static int get_or_create_node(NodeType type, int id) {
     int idx = find_node(type, id);
     if (idx >= 0) return idx;
@@ -106,7 +106,7 @@ static int find_node(NodeType type, int id) {
     return -1;
 }
 
-// Optional: print graph
+// Optional print graph
 void print_graph() {
     printf("Resource Allocation Graph:\n");
     for (int i = 0; i < node_count; i++) {
