@@ -19,6 +19,7 @@
 
 // max length of intersection name
 #define MAX_NAME_LENGTH 32
+#define MAX_TRAINS 50
 
 // struct to represent an intersection
 typedef struct {
