@@ -22,6 +22,7 @@ Updated 4/13/2025
 #include "parser/parser.h"                         // Jarett Woodard
 #include "Basic_IPC_Workflow/intersection_locks.h" // Jake Pinell
 #include "Shared_Memory_Setup/Memory_Segments.h"   // Steve Kuria
+#include "Basic_IPC_Workflow/resource_allocation_graph.h"
 
 // This file uses code from server.c authored by Jason Greer
 
