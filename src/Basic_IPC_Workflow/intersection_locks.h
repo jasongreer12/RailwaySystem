@@ -2,8 +2,9 @@
 // Author: Jake Pinell
 // Group: B
 // Email: jpinell@okstate.edu
-// Date: 4-4-2025
-// Implementation of mutex and semaphore locks for railway intersections
+// Date: 4-18-2025
+// Implementation of mutex and semaphore locks for railway intersections, intersections now track which trains are currently passing through.
+
 
 #ifndef INTERSECTION_LOCKS_H
 #define INTERSECTION_LOCKS_H
@@ -47,5 +48,8 @@ int release_lock(Intersection *intersection);
 
 // Clean up an intersection's locks
 void cleanup_locks(Intersection *intersection);
+
+// Check if a train is currently in the intersection
+bool is_train_in_intersection(Intersection *intersection, int train_id);
 
 #endif // INTERSECTION_LOCKS_H
