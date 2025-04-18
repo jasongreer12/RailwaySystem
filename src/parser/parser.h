@@ -37,7 +37,7 @@ This parses to
 id = "IntersectionA"
 capacity = 1
 available = 1
-...
+
 initial condition is that available = capacity. Capcity can be reduced as trains
 occupy the intersection. An initial capcity of 1 indicates a mutex. An initial
 capacity of >1 indicates a semaphore.
@@ -56,4 +56,4 @@ int getIntersections(IntersectionEntry intersections[]);
 void printTrainEntries(const TrainEntry trains[], int count);
 void printIntersectionEntries(const IntersectionEntry intersections[], int count);
 
-#endif  // PARSER_H
+#endif

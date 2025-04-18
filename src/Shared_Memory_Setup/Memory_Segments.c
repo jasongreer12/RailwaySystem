@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include "../logger/csv_logger.h"
 
 // Function to initialize shared memory and intersections
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
@@ -79,8 +80,11 @@ SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
         si->wait_count  = 0;
         memset(si->holders,    0, sizeof(si->holders));
         memset(si->wait_queue, 0, sizeof(si->wait_queue));
-    }
 
+        // Log the initialization of each shared intersection to the CSV
+        log_train_event_csv_ex(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, si->semName, NULL);
+    }
+    
     close(shm_fd); // Close the file descriptor (not the memory)
     return shared_intersections;
 }

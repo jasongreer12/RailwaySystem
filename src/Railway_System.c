@@ -64,7 +64,7 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-    // set up shared memory (for whatever data you need there)
+    // set up shared memory (for whatever data is needed)
     size_t shm_size;
     SharedIntersection *shared_intersections =
         init_shared_memory("/intersection_shm", &shm_size);
@@ -133,7 +133,7 @@ int main()
             continue;
         }
 
-        // STOP? then break
+        // STOP then break
         if (strcmp(req.action, "STOP") == 0)
         {
             LOG_SERVER("Received STOP signal. Exiting server loop");
@@ -217,7 +217,7 @@ int main()
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-                    LOG_SERVER("Failed to release %s from Train %d", req.intersection, req.train_id);
+                    LOG_SERVER("Failed to release %s from Train %d", req.train_id, req.intersection);
                 }
             }
         }
@@ -237,15 +237,20 @@ int main()
         }
     }
 
-    // clean the queue
+    //use the train_id from the last processed message for logging
+    //let's consider using 0 if train ID is not available at this point
+    int last_train_id = req.train_id;
+
     if (msgctl(msgid, IPC_RMID, NULL) == -1)
     {
         LOG_SERVER("msgctl(IPC_RMID) failed: %s", strerror(errno));
+        log_train_event_csv_ex(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "FAIL", getpid(), strerror(errno), NULL, NULL, 0, false, 0, NULL, NULL);
         perror("[SERVER] msgctl");
     }
     else
     {
         LOG_SERVER("Message queue removed");
+        log_train_event_csv_ex(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
         printf("[SERVER] Message queue removed. Exiting.\n");
     }
 
@@ -254,11 +259,11 @@ int main()
     LOG_SERVER("Shared memory cleaned up");
 
     //final system state
-    log_train_event_csv_ex(csv_file,0,"SYSTEM","SHUTDOWN","OK",getpid(),NULL,NULL,NULL,0,false,0,NULL,NULL);
+    log_train_event_csv_ex(0,"SYSTEM","SHUTDOWN","OK",getpid(),NULL,NULL,NULL,0,false,0,NULL,NULL);
 
     //close all loggers
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
     log_close();
-    csv_logger_close(csv_file);
+    csv_logger_close();
     exit(0);  // Ensure process terminates after cleanup
 }

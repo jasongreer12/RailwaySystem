@@ -7,130 +7,130 @@ SERVER: Initialized semaphore for IntersectionB (capacity=2)
 SERVER: Initialized mutex for IntersectionC (capacity=1)
 SERVER: Initialized semaphore for IntersectionD (capacity=3)
 SERVER: Initialized mutex for IntersectionE (capacity=1)
-SERVER: Message queue ready (ID: 15)
+SERVER: Message queue ready (ID: 8)
 SERVER: Starting train simulator
-SERVER: Message queue ready (ID: 15)
+SERVER: Message queue ready (ID: 8)
 SERVER: Parsed 4 trains
 TRAIN1: Sent ACQUIRE request for IntersectionA
 SERVER: Received: Train 1 requests "ACQUIRE" on IntersectionA
-TRAIN3: Sent ACQUIRE request for IntersectionC
 SERVER: GRANTED IntersectionA to Train 1
-TRAIN2: Sent ACQUIRE request for IntersectionB
 SERVER: Sent response: Train 1 "GRANT" on IntersectionA
+TRAIN3: Sent ACQUIRE request for IntersectionC
 TRAIN1: Received GRANT for IntersectionA
-SERVER: Received: Train 2 requests "ACQUIRE" on IntersectionB
-TRAIN4: Sent ACQUIRE request for IntersectionE
-SERVER: GRANTED IntersectionB to Train 2
-SERVER: Sent response: Train 2 "GRANT" on IntersectionB
 SERVER: Received: Train 3 requests "ACQUIRE" on IntersectionC
+TRAIN2: Sent ACQUIRE request for IntersectionB
 SERVER: GRANTED IntersectionC to Train 3
-TRAIN2: Received GRANT for IntersectionB
 SERVER: Sent response: Train 3 "GRANT" on IntersectionC
 TRAIN3: Received GRANT for IntersectionC
+TRAIN4: Sent ACQUIRE request for IntersectionE
+SERVER: Received: Train 2 requests "ACQUIRE" on IntersectionB
+SERVER: GRANTED IntersectionB to Train 2
+SERVER: Sent response: Train 2 "GRANT" on IntersectionB
+TRAIN2: Received GRANT for IntersectionB
 SERVER: Received: Train 4 requests "ACQUIRE" on IntersectionE
 SERVER: GRANTED IntersectionE to Train 4
 SERVER: Sent response: Train 4 "GRANT" on IntersectionE
 TRAIN4: Received GRANT for IntersectionE
 TRAIN1: Sent RELEASE for IntersectionA
+TRAIN3: Sent RELEASE for IntersectionC
+TRAIN2: Sent RELEASE for IntersectionB
 SERVER: Received: Train 1 requests "RELEASE" on IntersectionA
 SERVER: Released IntersectionA from Train 1
-TRAIN2: Sent RELEASE for IntersectionB
+TRAIN4: Sent RELEASE for IntersectionE
 SERVER: Sent response: Train 1 "OK" on IntersectionA
-TRAIN3: Sent RELEASE for IntersectionC
+SERVER: Received: Train 3 requests "RELEASE" on IntersectionC
+SERVER: Released IntersectionC from Train 3
+SERVER: Sent response: Train 3 "OK" on IntersectionC
 SERVER: Received: Train 2 requests "RELEASE" on IntersectionB
 SERVER: Released IntersectionB from Train 2
-TRAIN1: Received OK for IntersectionA
 SERVER: Sent response: Train 2 "OK" on IntersectionB
-TRAIN4: Sent RELEASE for IntersectionE
-SERVER: Received: Train 3 requests "RELEASE" on IntersectionC
-TRAIN2: Received OK for IntersectionB
-SERVER: Released IntersectionC from Train 3
-TRAIN1: Sent ACQUIRE request for IntersectionB
-TRAIN2: Sent ACQUIRE request for IntersectionD
-SERVER: Sent response: Train 3 "OK" on IntersectionC
-TRAIN3: Received OK for IntersectionC
 SERVER: Received: Train 4 requests "RELEASE" on IntersectionE
-TRAIN3: Sent ACQUIRE request for IntersectionD
 SERVER: Released IntersectionE from Train 4
 SERVER: Sent response: Train 4 "OK" on IntersectionE
+TRAIN1: Received OK for IntersectionA
+TRAIN1: Sent ACQUIRE request for IntersectionB
+TRAIN3: Received OK for IntersectionC
+TRAIN3: Sent ACQUIRE request for IntersectionD
+TRAIN2: Received OK for IntersectionB
+TRAIN2: Sent ACQUIRE request for IntersectionD
+TRAIN4: Received OK for IntersectionE
+TRAIN4: Sent ACQUIRE request for IntersectionB
 SERVER: Received: Train 1 requests "ACQUIRE" on IntersectionB
 SERVER: GRANTED IntersectionB to Train 1
 SERVER: Sent response: Train 1 "GRANT" on IntersectionB
-SERVER: Received: Train 2 requests "ACQUIRE" on IntersectionD
-TRAIN4: Received OK for IntersectionE
-TRAIN1: Received GRANT for IntersectionB
-SERVER: GRANTED IntersectionD to Train 2
-TRAIN4: Sent ACQUIRE request for IntersectionB
-SERVER: Sent response: Train 2 "GRANT" on IntersectionD
 SERVER: Received: Train 3 requests "ACQUIRE" on IntersectionD
-TRAIN2: Received GRANT for IntersectionD
 SERVER: GRANTED IntersectionD to Train 3
 SERVER: Sent response: Train 3 "GRANT" on IntersectionD
+SERVER: Received: Train 2 requests "ACQUIRE" on IntersectionD
+SERVER: GRANTED IntersectionD to Train 2
+SERVER: Sent response: Train 2 "GRANT" on IntersectionD
 SERVER: Received: Train 4 requests "ACQUIRE" on IntersectionB
-TRAIN3: Received GRANT for IntersectionD
 SERVER: GRANTED IntersectionB to Train 4
 SERVER: Sent response: Train 4 "GRANT" on IntersectionB
+TRAIN1: Received GRANT for IntersectionB
+TRAIN2: Received GRANT for IntersectionD
+TRAIN3: Received GRANT for IntersectionD
 TRAIN4: Received GRANT for IntersectionB
 TRAIN1: Sent RELEASE for IntersectionB
-TRAIN2: Sent RELEASE for IntersectionD
-SERVER: Received: Train 1 requests "RELEASE" on IntersectionB
 TRAIN3: Sent RELEASE for IntersectionD
+TRAIN2: Sent RELEASE for IntersectionD
 TRAIN4: Sent RELEASE for IntersectionB
-SERVER: Released IntersectionB from Train 1
-SERVER: Sent response: Train 1 "OK" on IntersectionB
-TRAIN1: Received OK for IntersectionB
 SERVER: Received: Train 2 requests "RELEASE" on IntersectionD
-TRAIN1: Sent ACQUIRE request for IntersectionC
 SERVER: Released IntersectionD from Train 2
 SERVER: Sent response: Train 2 "OK" on IntersectionD
-SERVER: Received: Train 3 requests "RELEASE" on IntersectionD
+SERVER: Received: Train 1 requests "RELEASE" on IntersectionB
 TRAIN2: Received OK for IntersectionD
-SERVER: Released IntersectionD from Train 3
+SERVER: Released IntersectionB from Train 1
+SERVER: Sent response: Train 1 "OK" on IntersectionB
 TRAIN2: Sent ACQUIRE request for IntersectionE
+SERVER: Received: Train 3 requests "RELEASE" on IntersectionD
+SERVER: Released IntersectionD from Train 3
 SERVER: Sent response: Train 3 "OK" on IntersectionD
-TRAIN3: Received OK for IntersectionD
-TRAIN3: Sent ACQUIRE request for IntersectionA
 SERVER: Received: Train 4 requests "RELEASE" on IntersectionB
 SERVER: Released IntersectionB from Train 4
 SERVER: Sent response: Train 4 "OK" on IntersectionB
-SERVER: Received: Train 1 requests "ACQUIRE" on IntersectionC
-TRAIN4: Received OK for IntersectionB
-SERVER: GRANTED IntersectionC to Train 1
-TRAIN4: Sent ACQUIRE request for IntersectionD
-SERVER: Sent response: Train 1 "GRANT" on IntersectionC
-TRAIN1: Received GRANT for IntersectionC
 SERVER: Received: Train 2 requests "ACQUIRE" on IntersectionE
 SERVER: GRANTED IntersectionE to Train 2
 SERVER: Sent response: Train 2 "GRANT" on IntersectionE
+TRAIN1: Received OK for IntersectionB
+TRAIN1: Sent ACQUIRE request for IntersectionC
+TRAIN3: Received OK for IntersectionD
+TRAIN3: Sent ACQUIRE request for IntersectionA
+TRAIN4: Received OK for IntersectionB
+TRAIN4: Sent ACQUIRE request for IntersectionD
 TRAIN2: Received GRANT for IntersectionE
+SERVER: Received: Train 1 requests "ACQUIRE" on IntersectionC
+SERVER: GRANTED IntersectionC to Train 1
+SERVER: Sent response: Train 1 "GRANT" on IntersectionC
 SERVER: Received: Train 3 requests "ACQUIRE" on IntersectionA
 SERVER: GRANTED IntersectionA to Train 3
 SERVER: Sent response: Train 3 "GRANT" on IntersectionA
-TRAIN3: Received GRANT for IntersectionA
 SERVER: Received: Train 4 requests "ACQUIRE" on IntersectionD
 SERVER: GRANTED IntersectionD to Train 4
 SERVER: Sent response: Train 4 "GRANT" on IntersectionD
+TRAIN1: Received GRANT for IntersectionC
+TRAIN3: Received GRANT for IntersectionA
 TRAIN4: Received GRANT for IntersectionD
-TRAIN1: Sent RELEASE for IntersectionC
-SERVER: Received: Train 1 requests "RELEASE" on IntersectionC
 TRAIN2: Sent RELEASE for IntersectionE
-SERVER: Released IntersectionC from Train 1
-TRAIN3: Sent RELEASE for IntersectionA
-SERVER: Sent response: Train 1 "OK" on IntersectionC
-TRAIN4: Sent RELEASE for IntersectionD
 SERVER: Received: Train 2 requests "RELEASE" on IntersectionE
-TRAIN1: Received OK for IntersectionC
+TRAIN3: Sent RELEASE for IntersectionA
 SERVER: Released IntersectionE from Train 2
+TRAIN1: Sent RELEASE for IntersectionC
 SERVER: Sent response: Train 2 "OK" on IntersectionE
-TRAIN2: Received OK for IntersectionE
+TRAIN4: Sent RELEASE for IntersectionD
 SERVER: Received: Train 3 requests "RELEASE" on IntersectionA
 SERVER: Released IntersectionA from Train 3
+TRAIN2: Received OK for IntersectionE
 SERVER: Sent response: Train 3 "OK" on IntersectionA
 TRAIN3: Received OK for IntersectionA
+SERVER: Received: Train 1 requests "RELEASE" on IntersectionC
+SERVER: Released IntersectionC from Train 1
+SERVER: Sent response: Train 1 "OK" on IntersectionC
 SERVER: Received: Train 4 requests "RELEASE" on IntersectionD
 SERVER: Released IntersectionD from Train 4
 SERVER: Sent response: Train 4 "OK" on IntersectionD
 TRAIN4: Received OK for IntersectionD
+TRAIN1: Received OK for IntersectionC
 SERVER: All 4 trains have finished
 SERVER: Sent STOP to server
 SERVER: Train simulator exiting

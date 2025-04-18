@@ -14,7 +14,8 @@ Date: 4.4.2025
 #define ITEM_COUNT_MAX 64
 #define ITEM_CHAR_MAX 64
 
-/*This modle will generate train and intersection structs for manipulation elsewhere
+/*
+  This modle will generate train and intersection structs for manipulation elsewhere
   in the program. The train struct will contain a list of intersections that the
   train will pass through. The intersection struct will contain a list of trains
   that are currently at the intersection. The intersection struct will also

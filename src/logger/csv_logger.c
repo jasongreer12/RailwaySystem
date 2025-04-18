@@ -71,33 +71,38 @@ void validate_csv_log_data(CsvLogData* log_data) {
     log_data->has_deadlock = log_data->has_deadlock ? true : false;
 }
 
-//intitializes logger instance for current run of program
+// Declare csv_file as a static variable
+static FILE* csv_file = NULL;
+
 FILE* csv_logger_init(void) {
+    if (csv_file != NULL) {
+        return csv_file; // Already initialized
+    }
+
     time_t now;
     struct tm *tm_info;
     char filename[64];
-    FILE *file;
 
     time(&now);
     tm_info = localtime(&now);
 
-    //file name with time stamp makes sure unique file for every run
+    // File name with timestamp ensures unique file for every run
     strftime(filename, sizeof(filename), "train_run_%m%d%Y_%H%M%S.csv", tm_info);
 
-    file = fopen(filename, "w");
-    if (!file) {
+    csv_file = fopen(filename, "w");
+    if (!csv_file) {
         return NULL;
     }
 
-    //header row
-    fprintf(file, "sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,has_deadlock,train_state,node_count,cycle_path,edge_type\n");
-    fflush(file);
+    // Header row
+    fprintf(csv_file, "sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,has_deadlock,train_state,node_count,cycle_path,edge_type\n");
+    fflush(csv_file);
 
-    return file;
+    return csv_file;
 }
 
-int log_train_event_csv_ex_impl(FILE* file, const char* calling_file, const char* calling_func, int train_id, const char* intersection_id, const char* action, const char* status, pid_t pid, const char* error_msg, const SharedIntersection* resource_state, const TrainEntry* train_state, int current_position, bool has_deadlock, int node_count, const char* cycle_path, const char* edge_type) {
-    if (!file) return -1;
+int log_train_event_csv_ex_impl(const char* calling_file, const char* calling_func, int train_id, const char* intersection_id, const char* action, const char* status, pid_t pid, const char* error_msg, const SharedIntersection* resource_state, const TrainEntry* train_state, int current_position, bool has_deadlock, int node_count, const char* cycle_path, const char* edge_type) {
+    if (!csv_file) return -1; // Ensure csv_file is initialized
 
     // Validate and assign defaults to log_data
     CsvLogData log_data = {
@@ -117,26 +122,26 @@ int log_train_event_csv_ex_impl(FILE* file, const char* calling_file, const char
     };
     validate_csv_log_data(&log_data);
 
-    // Timestamp each row
+    // timestamp column
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
 
-    // Increased precision for runtime tracing
+    // timestamp format, high precision
     char precise_time[32];
     struct tm *tm_info = localtime(&ts.tv_sec);
     strftime(precise_time, sizeof(precise_time), "%Y-%m-%d %H:%M:%S", tm_info);
     char full_timestamp[48];
     snprintf(full_timestamp, sizeof(full_timestamp), "%s.%09ld", precise_time, ts.tv_nsec);
 
-    // JSON strings for structs
+    // json strings for structs
     char resource_json[512];
     char train_json[1024];
 
     shared_intersection_to_json(resource_json, sizeof(resource_json), log_data.resource_state);
     train_entry_to_json(train_json, sizeof(train_json), log_data.train_state, log_data.current_position);
 
-    // CSV line with individual deadlock parameters
-    fprintf(file, "%s,%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%s,%d,%s,%s\n", 
+    // individual csv line
+    fprintf(csv_file, "%s,%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%s,%d,%s,%s\n", 
             full_timestamp,
             calling_file,
             calling_func,
@@ -153,7 +158,7 @@ int log_train_event_csv_ex_impl(FILE* file, const char* calling_file, const char
             log_data.cycle_path,
             log_data.edge_type);
 
-    fflush(file);
+    fflush(csv_file);
     return 0;
 }
 
@@ -183,9 +188,10 @@ int log_train_event_csv(FILE* file, const char* csv_data, const char* calling_fi
     return 0;
 }
 
-void csv_logger_close(FILE* file) {
-    if (file) {
-        fclose(file);
+void csv_logger_close(void) {
+    if (csv_file) {
+        fclose(csv_file);
+        csv_file = NULL;
     }
 }
 
