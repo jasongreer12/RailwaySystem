@@ -9,6 +9,13 @@
 #include <string.h>
 #include <sys/msg.h>
 #include "ipc.h" // Header that defines the Message struct and send_message prototype
+#include "../logger/csv_logger.h" // For logging
+
+/*
+See csv_logger.h for definitions.
+Update relevant fields with local variables to pass into csv log for debugging.
+LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+*/
 
 // Sends a message from a train to the central server
 // Includes the train ID, the intersection being requested or released,

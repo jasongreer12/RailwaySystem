@@ -9,6 +9,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "resource_allocation_graph.h"
+#include "../logger/csv_logger.h" // For logging
+
+/*
+See csv_logger.h for definitions.
+Update relevant fields with local variables to pass into csv log for debugging.
+LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+*/
 
 // Internal structures
 typedef struct {

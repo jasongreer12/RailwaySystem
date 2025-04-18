@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
+#include "../logger/csv_logger.h"
 
 // max length of intersection name (increased to accommodate "/sem_" prefix)
 #define MAX_NAME_LENGTH 32

@@ -12,6 +12,14 @@
 #include <string.h>
 #include <sys/msg.h>
 #include "intersection_locks.h"  // Custom locking functions (mutex/semaphore)
+#include "ipc.h"             // Message struct and send_message function
+//#include "../logger/csv_logger.h" // For logging
+
+/*
+See csv_logger.h for definitions.
+Update relevant fields with local variables to pass into csv log for debugging.
+LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+*/
 
 #define MSG_KEY 1234
 #define MAX_NAME 64
@@ -22,12 +30,13 @@ Intersection intersections[MAX_INTERSECTIONS];
 int num_intersections = 0;
 
 // IPC message structure
-typedef struct {
-    long mtype;                     // Required for System V message queues
-    int train_id;                   // ID of the train sending the message
-    char intersection[MAX_NAME];   // Intersection name
-    char action[8];                // "ACQUIRE" or "RELEASE"
-} Message;
+// typedef struct {
+//     long mtype;                     // Required for System V message queues
+//     int train_id;                   // ID of the train sending the message
+//     char intersection[MAX_NAME];   // Intersection name
+//     char action[8];                // "ACQUIRE" or "RELEASE"
+// } Message;
+// Jarett: commenting out because it is a duplicate of message struct in ipc.h
 
 // Sends an IPC message to the message queue
 void send_msg(int msgid, int train_id, const char* intersection, const char* action) {

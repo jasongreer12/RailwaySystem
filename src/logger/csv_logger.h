@@ -23,6 +23,28 @@ Date: 4.12.2025
 // typedef struct TrainEntry TrainEntry;
 
 // Definition of CsvLogData struct
+
+/*
+LOG_CSV Parameters
+0   int train_id; Null = 0
+1   const char* intersection_id; null = manual or NULL
+2   const char* action; manual or NULL
+3   const char* status; if variable manual or NULL
+4   pid_t pid; never null
+5   const char* error_msg; null = manual or NULL
+6   const SharedIntersection* resource_state; null = NULL
+7   const TrainEntry* train_state; null = NULL
+8   int current_position; null = 0
+9   bool has_deadlock; null = false
+10  int node_count; null = 0
+11  const char* cycle_path; null = manual or NULL
+12  const char* edge_type; null = manual or NULL
+
+To utilize, replace the elements of the LOG_CSV function with the appropriate local variables.
+indeces:0,        1,                   2,         3,        4,    5,    6,    7, 8,     9,10,          11,   12)
+LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+*/
+
 typedef struct {
     int train_id;
     const char* intersection_id;

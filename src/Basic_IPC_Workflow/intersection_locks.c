@@ -7,7 +7,13 @@
 
 #include "intersection_locks.h"
 #include <fcntl.h>
+#include "../logger/csv_logger.h"
 
+/*
+See csv_logger.h for definitions.
+Update relevant fields with local variables to pass into csv log for debugging.
+LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+*/
 // Initialize a mutex for an intersection with capacity 1
 bool init_mutex_lock(Intersection *intersection) {
     if (!intersection) {
