@@ -46,11 +46,11 @@ bool init_semaphore_lock(Intersection *intersection);
 
 // Acquire a lock for an intersection based on its capacity
 // Returns 0 on success, -1 on failure
-int acquire_lock(Intersection *intersection);
+int acquire_lock(Intersection *intersection, int train_id);
 
 // Release a lock for an intersection based on its capacity
 // Returns 0 on success, -1 on failure
-int release_lock(Intersection *intersection);
+int release_lock(Intersection *intersection, int train_id);
 
 // Clean up an intersection's locks
 void cleanup_locks(Intersection *intersection);
