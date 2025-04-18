@@ -17,7 +17,7 @@
 #include <string.h>
 #include "../logger/csv_logger.h"
 
-// max length of intersection name (increased to accommodate "/sem_" prefix)
+// max length of intersection name
 #define MAX_NAME_LENGTH 32
 
 // struct to represent an intersection
