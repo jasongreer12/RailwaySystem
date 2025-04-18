@@ -67,7 +67,7 @@ Function specific
 
 FILE* csv_logger_init(void);
 
-int log_train_event_csv_ex_impl(const char* calling_file, 
+int LOG_CSV_impl(const char* calling_file, 
                           const char* calling_func,
                           int train_id,
                           const char* intersection_id,
@@ -83,13 +83,11 @@ int log_train_event_csv_ex_impl(const char* calling_file,
                           const char* cycle_path,
                           const char* edge_type);
 
-#define log_train_event_csv_ex(...) \
-    log_train_event_csv_ex_impl(__FILE__, __func__, __VA_ARGS__)
+#define LOG_CSV(...) \
+    LOG_CSV_impl(__FILE__, __func__, __VA_ARGS__)
 
 int log_train_event_csv(FILE* file, const char* csv_data, 
                        const char* calling_file, const char* calling_func);
-
-#define LOG_CSV(file, data) log_train_event_csv(file, data, __FILE__, __func__)
 
 void csv_logger_close(void);
 

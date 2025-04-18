@@ -244,13 +244,13 @@ int main()
     if (msgctl(msgid, IPC_RMID, NULL) == -1)
     {
         LOG_SERVER("msgctl(IPC_RMID) failed: %s", strerror(errno));
-        log_train_event_csv_ex(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "FAIL", getpid(), strerror(errno), NULL, NULL, 0, false, 0, NULL, NULL);
+        LOG_CSV(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "FAIL", getpid(), strerror(errno), NULL, NULL, 0, false, 0, NULL, NULL);
         perror("[SERVER] msgctl");
     }
     else
     {
         LOG_SERVER("Message queue removed");
-        log_train_event_csv_ex(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+        LOG_CSV(last_train_id, "SYSTEM", "QUEUE_CLEANUP", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
         printf("[SERVER] Message queue removed. Exiting.\n");
     }
 
@@ -259,7 +259,7 @@ int main()
     LOG_SERVER("Shared memory cleaned up");
 
     //final system state
-    log_train_event_csv_ex(0,"SYSTEM","SHUTDOWN","OK",getpid(),NULL,NULL,NULL,0,false,0,NULL,NULL);
+    LOG_CSV(0,"SYSTEM","SHUTDOWN","OK",getpid(),NULL,NULL,NULL,0,false,0,NULL,NULL);
 
     //close all loggers
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");

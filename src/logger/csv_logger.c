@@ -101,7 +101,7 @@ FILE* csv_logger_init(void) {
     return csv_file;
 }
 
-int log_train_event_csv_ex_impl(const char* calling_file, const char* calling_func, int train_id, const char* intersection_id, const char* action, const char* status, pid_t pid, const char* error_msg, const SharedIntersection* resource_state, const TrainEntry* train_state, int current_position, bool has_deadlock, int node_count, const char* cycle_path, const char* edge_type) {
+int LOG_CSV_impl(const char* calling_file, const char* calling_func, int train_id, const char* intersection_id, const char* action, const char* status, pid_t pid, const char* error_msg, const SharedIntersection* resource_state, const TrainEntry* train_state, int current_position, bool has_deadlock, int node_count, const char* cycle_path, const char* edge_type) {
     if (!csv_file) return -1; // Ensure csv_file is initialized
 
     // Validate and assign defaults to log_data

@@ -82,7 +82,7 @@ SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
         memset(si->wait_queue, 0, sizeof(si->wait_queue));
 
         // Log the initialization of each shared intersection to the CSV
-        log_train_event_csv_ex(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, si->semName, NULL);
+        LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, si->semName, NULL);
     }
     
     close(shm_fd); // Close the file descriptor (not the memory)
