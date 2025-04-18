@@ -164,7 +164,7 @@ int main()
                 // Attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
                 if (add_holder(shared_intersections, idx, req.train_id))
                 {
-                    int result = acquire_lock(&locks[idx]);
+                    int result = acquire_lock(&locks[idx], req.train_id);
 
                     if (result == 0)
                     {
@@ -191,7 +191,7 @@ int main()
             }
             else // RELEASE
             {
-                int result = release_lock(&locks[idx]);
+                int result = release_lock(&locks[idx], req.train_id);
 
                 if (result == 0)
                 {
