@@ -124,14 +124,14 @@ void server_loop(int msgid) {
             
             if (strcmp(msg.action, "ACQUIRE") == 0) {
                 // Attempt to acquire the lock
-                if (acquire_lock(&intersections[idx]) == 0) {
+                if (acquire_lock(&intersections[idx], msg.train_id) == 0) {
                     printf("[SERVER] Granted %s to Train %d\n", msg.intersection, msg.train_id);
                 } else {
                     printf("[SERVER] Could not grant %s to Train %d\n", msg.intersection, msg.train_id);
                 }
             } else if (strcmp(msg.action, "RELEASE") == 0) {
                 // Attempt to release the lock
-                if (release_lock(&intersections[idx]) == 0) {
+                if (release_lock(&intersections[idx], msg.train_id) == 0) {
                     printf("[SERVER] Released %s from Train %d\n", msg.intersection, msg.train_id);
                 } else {
                     printf("[SERVER] Failed to release %s from Train %d\n", msg.intersection, msg.train_id);
