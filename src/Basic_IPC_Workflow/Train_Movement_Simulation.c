@@ -1,178 +1,149 @@
-// Train_Movement_Simulation.c
-// Author: Zachary Oyer
-// Date: 4-4-2025
-// Group B
-// Simulates train processes requesting and releasing intersections using
-// System V message queues for IPC. Forks multiple train processes and
-// runs a central server loop to handle intersection locks.
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/msg.h>
-#include "intersection_locks.h"  // Custom locking functions (mutex/semaphore)
-#include "ipc.h"             // Message struct and send_message function
-//#include "../logger/csv_logger.h" // For logging
-
-/*
-See csv_logger.h for definitions.
-Update relevant fields with local variables to pass into csv log for debugging.
-LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+/* Note: we needed to add author for this file and Jarett created it
+Author: Jarett Woodard
+Group: B
+Email: jarett.woodard@okstate.edu
+Date: 4.4.2025
 */
 
-#define MSG_KEY 1234
-#define MAX_NAME 64
-#define MAX_INTERSECTIONS 10
+#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <string.h>
+#include <errno.h>
 
-// Global array to store intersection definitions and lock info
-Intersection intersections[MAX_INTERSECTIONS];
-int num_intersections = 0;
+#include "logger/logger.h"                         // Jason Greer
+#include "Basic_IPC_Workflow/ipc.h"                // Zach Oyer
+#include "parser/parser.h"                         // Jarett Woodard
+#include "Basic_IPC_Workflow/intersection_locks.h" // Jake Pinell
+#include "Shared_Memory_Setup/Memory_Segments.h"   // Steve Kuria
 
-// IPC message structure
-// typedef struct {
-//     long mtype;                     // Required for System V message queues
-//     int train_id;                   // ID of the train sending the message
-//     char intersection[MAX_NAME];   // Intersection name
-//     char action[8];                // "ACQUIRE" or "RELEASE"
-// } Message;
-// Jarett: commenting out because it is a duplicate of message struct in ipc.h
+// This file uses code from server.c authored by Jason Greer
 
-// Sends an IPC message to the message queue
-void send_msg(int msgid, int train_id, const char* intersection, const char* action) {
-    Message msg;
-    msg.mtype = 1;
-    msg.train_id = train_id;
-    strncpy(msg.intersection, intersection, MAX_NAME);
-    strncpy(msg.action, action, sizeof(msg.action));
-    msgsnd(msgid, &msg, sizeof(Message) - sizeof(long), 0);
-}
+int main()
+{
+    log_init("simulation.log", 1);
 
-// Simulates a train traveling through a list of intersections
-void run_train(int msgid, int train_id, const char* route[], int route_len) {
-    for (int i = 0; i < route_len; i++) {
-        // Request to enter intersection
-        send_msg(msgid, train_id, route[i], "ACQUIRE");
-        printf("Train %d requesting %s\n", train_id, route[i]);
-        sleep(1); // Simulate wait for lock
-
-        // Train moves through the intersection
-        printf("Train %d moving through %s\n", train_id, route[i]);
-        sleep(1); // Simulate movement time
-
-        // Release the intersection
-        send_msg(msgid, train_id, route[i], "RELEASE");
-        printf("Train %d released %s\n", train_id, route[i]);
+    // Initialize shared memory for intersections
+    size_t shm_size;
+    SharedIntersection *shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+    if (!shared_intersections)
+    {
+        fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
+        return 1;
     }
-}
+    printf("[SERVER] Shared memory initialized.\n");
+    LOG_SERVER("Shared memory initialized.");
 
-// Initializes all intersections with their names, capacities, and locks
-void init_intersections() {
-    // IntersectionA - single train at a time (mutex)
-    strcpy(intersections[0].name, "IntersectionA");
-    intersections[0].capacity = 1;
-    init_mutex_lock(&intersections[0]);
-    
-    // IntersectionB - allows 2 trains (semaphore)
-    strcpy(intersections[1].name, "IntersectionB");
-    intersections[1].capacity = 2;
-    init_semaphore_lock(&intersections[1]);
-    
-    // IntersectionC - single train (mutex)
-    strcpy(intersections[2].name, "IntersectionC");
-    intersections[2].capacity = 1;
-    init_mutex_lock(&intersections[2]);
-    
-    // IntersectionD - allows 3 trains (semaphore)
-    strcpy(intersections[3].name, "IntersectionD");
-    intersections[3].capacity = 3;
-    init_semaphore_lock(&intersections[3]);
-    
-    // IntersectionE - single train (mutex)
-    strcpy(intersections[4].name, "IntersectionE");
-    intersections[4].capacity = 1;
-    init_mutex_lock(&intersections[4]);
-    
-    num_intersections = 5;
-    printf("Initialized %d intersections\n", num_intersections);
-}
+    // Create array of train structs and count
+    TrainEntry trains[LINE_MAX];
+    int trainCount = getTrains(trains);
 
-// Searches the intersections array for a given name
-int find_intersection(const char* name) {
-    for (int i = 0; i < num_intersections; i++) {
-        if (strcmp(intersections[i].name, name) == 0) {
-            return i;
-        }
-    }
-    return -1; // Not found
-}
+    // Create array of intersections structs and count
+    IntersectionEntry intersections[LINE_MAX];
+    int intersectionCount = getIntersections(intersections);
 
-// Central server loop to process IPC messages and handle locks
-void server_loop(int msgid) {
-    Message msg;
+    // PRINT CHECK.
+    // Print individual train entries
+    LOG_SERVER("Parsed %d trains from file", trainCount);
+    printf("Train Entries:\n");
+    printTrainEntries(trains, trainCount);
 
-    while (1) {
-        // Receive next message from queue
-        if (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), 0, 0) > 0) {
-            printf("[SERVER] %s from Train %d for %s\n", msg.action, msg.train_id, msg.intersection);
-            
-            int idx = find_intersection(msg.intersection);
-            if (idx == -1) {
-                printf("[SERVER] Intersection %s not found\n", msg.intersection);
-                continue;
-            }
-            
-            if (strcmp(msg.action, "ACQUIRE") == 0) {
-                // Attempt to acquire the lock
-                if (acquire_lock(&intersections[idx], msg.train_id) == 0) {
-                    printf("[SERVER] Granted %s to Train %d\n", msg.intersection, msg.train_id);
-                } else {
-                    printf("[SERVER] Could not grant %s to Train %d\n", msg.intersection, msg.train_id);
-                }
-            } else if (strcmp(msg.action, "RELEASE") == 0) {
-                // Attempt to release the lock
-                if (release_lock(&intersections[idx], msg.train_id) == 0) {
-                    printf("[SERVER] Released %s from Train %d\n", msg.intersection, msg.train_id);
-                } else {
-                    printf("[SERVER] Failed to release %s from Train %d\n", msg.intersection, msg.train_id);
-                }
-            }
-        }
-    }
-}
+    // Print all intersection entries
+    printf("Intersection Entries:\n");
+    LOG_SERVER("Parsed %d intersections from file", intersectionCount);
+    printIntersectionEntries(intersections, intersectionCount);
 
-int main() {
-    // Create the System V message queue
+    // Create (or open) the message queue using the defined MSG_KEY
     int msgid = msgget(MSG_KEY, IPC_CREAT | 0666);
+    if (msgid < 0)
+    {
+        LOG_SERVER("Error occurred in railway_system.c line 58.");
+        perror("[SERVER] msgget");
+        exit(EXIT_FAILURE);
+    }
+    printf("[SERVER] Message queue ready (ID: %d)\n", msgid);
+    LOG_SERVER("Message queue ready (ID: %d)", msgid);
 
-    // Set up all intersections and their lock types
-    init_intersections();
+    Message rcv_msg, snd_msg;
+    while (1)
+    {
+        // Wait for any message of type 1 (ACQUIRE/RELEASE requests)
+        if (msgrcv(msgid, &rcv_msg, sizeof(Message) - sizeof(long), 1, 0) == -1)
+        {
+            perror("[SERVER] msgrcv");
+            continue;
+        }
 
-    // Define the travel routes for the trains
-    const char* route1[] = {"IntersectionA", "IntersectionB", "IntersectionC"};
-    const char* route2[] = {"IntersectionB", "IntersectionD", "IntersectionE"};
+        printf("[SERVER] Received: Train %d requests \"%s\" on %s\n",
+               rcv_msg.train_id, rcv_msg.action, rcv_msg.intersection);
+        LOG_SERVER("Received: Train %d requests \"%s\" on %s",
+                   rcv_msg.train_id,
+                   rcv_msg.action,
+                   rcv_msg.intersection);
 
-    // Fork Train 1
-    pid_t pid1 = fork();
-    if (pid1 == 0) {
-        run_train(msgid, 1, route1, 3);
-        exit(0);
+        // Check for a stop condition
+        if (strncmp(rcv_msg.action, "STOP", 4) == 0)
+        {
+            printf("[SERVER] Received STOP signal. Shutting down.\n");
+            LOG_SERVER("Received STOP signal. Shutting down.");
+            break;
+        }
+
+        // Prepare the response message:
+        // Set the response mtype to the train's id so the train can receive it
+        memset(&snd_msg, 0, sizeof(snd_msg));
+        snd_msg.mtype = rcv_msg.train_id + 100; // Response addressed to the requesting train
+        snd_msg.train_id = rcv_msg.train_id;
+        strncpy(snd_msg.intersection, rcv_msg.intersection, MAX_NAME);
+
+        if (strncmp(rcv_msg.action, "ACQUIRE", 7) == 0)
+        {
+            strncpy(snd_msg.action, "GRANT", sizeof(snd_msg.action));
+        }
+        else if (strncmp(rcv_msg.action, "RELEASE", 7) == 0)
+        {
+            strncpy(snd_msg.action, "OK", sizeof(snd_msg.action));
+        }
+        else
+        {
+            strncpy(snd_msg.action, "UNKNOWN", sizeof(snd_msg.action));
+        }
+
+        // Send the response message
+        if (msgsnd(msgid, &snd_msg, sizeof(Message) - sizeof(long), 0) == -1)
+        {
+            perror("[SERVER] msgsnd");
+            LOG_SERVER("Failed to send response to Train %d: %s",
+                       snd_msg.train_id,
+                       strerror(errno));
+        }
+        else
+        {
+            printf("[SERVER] Sent response: Train %d \"%s\" on %s\n",
+                   snd_msg.train_id, snd_msg.action, snd_msg.intersection);
+            LOG_SERVER("Sent response: Train %d \"%s\" on %s",
+                       snd_msg.train_id,
+                       snd_msg.action,
+                       snd_msg.intersection);
+        }
     }
 
-    // Fork Train 2
-    pid_t pid2 = fork();
-    if (pid2 == 0) {
-        run_train(msgid, 2, route2, 3);
-        exit(0);
+    // Remove the message queue before exiting
+    if (msgctl(msgid, IPC_RMID, NULL) == -1)
+    {
+        perror("[SERVER] msgctl(IPC_RMID)");
+        exit(EXIT_FAILURE);
     }
+    printf("[SERVER] Message queue removed. Exiting.\n");
+    LOG_SERVER("Message queue removed. Exiting.");
 
-    // Run the central server loop
-    server_loop(msgid);  // NOTE: this loop runs forever in current version
+    // Cleanup shared memory
+    destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
+    printf("[SERVER] Shared memory cleaned up.\n");
 
-    // Cleanup (unreachable, but good practice if you add exit conditions)
-    for (int i = 0; i < num_intersections; i++) {
-        cleanup_locks(&intersections[i]);
-    }
-
+    LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");
+    log_close();
     return 0;
 }
