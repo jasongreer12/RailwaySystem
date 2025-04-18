@@ -20,13 +20,19 @@
 // max length of intersection name (increased to accommodate "/sem_" prefix)
 #define MAX_NAME_LENGTH 32
 
-// struct to represent an intersection with synchronization primitives
+// struct to represent an intersection
 typedef struct {
-    char name[MAX_NAME_LENGTH];      // Intersection name
-    int capacity;                    // Max number of trains allowed
-    pthread_mutex_t mutex;           // Mutex (capacity = 1)
-    sem_t *semaphore;                // Semaphore (capacity > 1)
-    char semName[MAX_NAME_LENGTH];   // Unique name for semaphore
+    char name[MAX_NAME_LENGTH];    
+    int capacity;                  
+    
+    pthread_mutex_t mutex;
+    
+    sem_t *semaphore;
+    char semName[MAX_NAME_LENGTH];
+    
+    int train_ids[MAX_TRAINS];   
+    int num_trains;             
+    pthread_mutex_t tracker_mutex; 
 } Intersection;
 
 
