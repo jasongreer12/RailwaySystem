@@ -141,8 +141,8 @@ int main()
             break;
         }
 
-        LOG_SERVER("Received: Train %d requests \"%s\" on %s",
-                   req.train_id, req.action, req.intersection);
+        /*LOG_SERVER("Received: Train %d requests \"%s\" on %s",
+                   req.train_id, req.action, req.intersection);*/ // unnecessary log as train is responsible for logging they sent a req
 
         // prepare common parts of response
         memset(&resp, 0, sizeof(resp));
