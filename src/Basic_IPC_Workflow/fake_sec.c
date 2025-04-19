@@ -22,6 +22,6 @@ const char* getFakeTime(int increment) {
     if(increment > 0) {
         setFakeSec(fakeSec + increment);
     }
-    snprintf(timeString, sizeof(timeString), "[%02d:%02d:%02d]", fakeMin, fakeMinSec);
+    snprintf(timeString, sizeof(timeString), "[%02d:%02d:%02d]", fakeHour, fakeMin, fakeMinSec);
     return timeString;
 }

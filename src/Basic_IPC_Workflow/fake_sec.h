@@ -11,11 +11,11 @@ example:
     printf("Time: %s\n", getTime(5)); //Increments time by 5 seconds
 
     -OR-
-    
+
     printf(getTime(0)); //Gets current time
     printf(getTime(1)); //Increments time by 1 second
     printf(getTime(5)); //Increments time by 5 second
 */
-const char* getTime(int increment);
+const char* getFakeTime(int increment);
 
 #endif
