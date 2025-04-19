@@ -10,7 +10,8 @@ example:
     printf("Time: %s\n", getTime(1)); //Increments time by 1 second
     printf("Time: %s\n", getTime(5)); //Increments time by 5 seconds
 
-    OR
+    -OR-
+    
     printf(getTime(0)); //Gets current time
     printf(getTime(1)); //Increments time by 1 second
     printf(getTime(5)); //Increments time by 5 second
