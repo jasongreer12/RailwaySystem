@@ -76,12 +76,12 @@ int main()
         fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
         exit(1);
     }
-    //LOG_SERVER("Shared memory initialized");
+    // LOG_SERVER("Shared memory initialized");
 
     // parse trains
     TrainEntry trains[LINE_MAX];
     int trainCount = getTrains(trains);
-    //LOG_SERVER("Parsed %d trains", trainCount);
+    // LOG_SERVER("Parsed %d trains", trainCount);
     printTrainEntries(trains, trainCount);
 
     // parse intersections
@@ -122,7 +122,7 @@ int main()
         perror("[SERVER] msgget");
         exit(1);
     }
-    //LOG_SERVER("Message queue ready (ID: %d)", msgid);
+    // LOG_SERVER("Message queue ready (ID: %d)", msgid);
     printf("[SERVER] Message queue ready (ID: %d)\n", msgid);
 
     // main server loop
@@ -193,13 +193,48 @@ int main()
                     // intersection at capacity add the train to the waiting queue
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                    LOG_SERVER("%d is locked. %d added to wait queue.\n", req.intersection, req.train_id);
+                    LOG_SERVER("%s is locked. TRAIN%d added to wait queue.\n", req.intersection, req.train_id);
                     // after we enqueue a train to the wait list, we need to check if a deadlock has occured
-                    if (detect_deadlock()) {
+                    if (detect_deadlock())
+                    {
                         // if deadlock is detected need to forcibly remove an intersection from a train
-                        LOG_SERVER("Deadlock detected! Cycle: %d <> %d.\n", req.train_id, req.train_id); // need to add cycle here so formatting matches on project doc
+                        LOG_SERVER("Deadlock detected! Cycle: TRAIN%d <> TRAIN%d.\n", req.train_id, req.train_id); // need to add cycle here so formatting matches on project doc
+                        print_graph();
                         // need to add logic here to remove intersection from train
+                        // get intersection index involved with deadlock
+                        // find train that holds intersection 
+                        int victim = -1;
+                        for (int t = 1; t <= trainCount; t++)
+                        {
+                            if (remove_holder(shared_intersections, idx, t))
+                            {
+                                victim = t;
+                                break;
+                            }
+                        }
+                        if (victim == -1)
+                        {
+                            LOG_SERVER("  [!] No holder found to preempt for %s", req.intersection);
+                        }
+                        else
+                        {
+                            // release the lock
+                            if (release_lock(&locks[idx]) == 0)
+                            {
+                                LOG_SERVER("  Preemptively released %s from Train %d",
+                                           req.intersection, victim);
+                            }
+                            else
+                            {
+                                LOG_SERVER("  Failed to release low‑level lock for %s", req.intersection);
+                            }
 
+                            // give access to waiting train
+                            add_holder(shared_intersections, idx, req.train_id);
+                            strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
+                            LOG_SERVER("  Forced GRANT of %s to Train %d",
+                                       req.intersection, req.train_id);
+                        }
                     }
                 }
             }
@@ -247,15 +282,44 @@ int main()
                             }
                             else
                             {
-                                //LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
-                                           //next_train, req.intersection);
+                                // LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
+                                // next_train, req.intersection);
                                 printf("[SERVER] Sent response: Train %d \"GRANT\" on %s\n",
                                        next_train, req.intersection);
                             }
                         }
 
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
-                        //LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                        // LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                        next_train = dequeue_waiter(shared_intersections, idx);
+                        if (next_train != -1)
+                        {
+                            // 1) give them the holder slot
+                            add_holder(shared_intersections, idx, next_train);
+
+                            // 2) log the grant for the correct train
+                            LOG_SERVER("GRANTED %s to Train %d",
+                                       req.intersection, next_train);
+
+                            // 3) build & send exactly one GRANT message
+                            Message grant_msg = {0};
+                            grant_msg.mtype = next_train + 100;
+                            grant_msg.train_id = next_train;
+                            strncpy(grant_msg.intersection,
+                                    req.intersection,
+                                    sizeof(grant_msg.intersection) - 1);
+                            snprintf(grant_msg.action,
+                                     sizeof(grant_msg.action),
+                                     "GRANT");
+                            if (msgsnd(msgid,
+                                       &grant_msg,
+                                       sizeof(grant_msg) - sizeof(long),
+                                       0) == -1)
+                            {
+                                LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
+                                           next_train, strerror(errno));
+                            }
+                        }
                     }
                     else
                     {
@@ -279,8 +343,8 @@ int main()
         }
         else
         {
-            //LOG_SERVER("Sent response: Train %d \"%s\" on %s",
-                       //resp.train_id, resp.action, resp.intersection);
+            // LOG_SERVER("Sent response: Train %d \"%s\" on %s",
+            // resp.train_id, resp.action, resp.intersection);
             printf("[SERVER] Sent response: Train %d \"%s\" on %s\n",
                    resp.train_id, resp.action, resp.intersection);
         }
