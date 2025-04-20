@@ -84,6 +84,7 @@ int main()
     
     // set up shared memory 
 >>>>>>> Stashed changes
+    // set up shared memory 
     size_t shm_size;
     SharedIntersection *shared_intersections =
         init_shared_memory("/intersection_shm", &shm_size);
@@ -269,6 +270,37 @@ int main()
                             }
 >>>>>>> Stashed changes
                         }
+
+                            // send a  GRANT message to that train whose waiting
+                            Message grant_msg;
+                            memset(&grant_msg, 0, sizeof(grant_msg));
+                            grant_msg.mtype = next_train + 100; // client is listening on train_id+100
+                            grant_msg.train_id = next_train;
+                            strncpy(grant_msg.intersection,
+                                    req.intersection,
+                                    sizeof(grant_msg.intersection) - 1);
+                            snprintf(grant_msg.action,
+                                     sizeof(grant_msg.action),
+                                     "GRANT");
+
+                            if (msgsnd(msgid,
+                                       &grant_msg,
+                                       sizeof(grant_msg) - sizeof(long),
+                                       0) == -1)
+                            {
+                                LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
+                                           next_train, strerror(errno));
+                                perror("[SERVER] msgsnd GRANT");
+                            }
+                            else
+                            {
+                                LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
+                                           next_train, req.intersection);
+                                printf("[SERVER] Sent response: Train %d \"GRANT\" on %s\n",
+                                       next_train, req.intersection);
+                            }
+                        }
+
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         now = increment_time(clk, 1);
                         format_timestamp(now, ts);
@@ -288,6 +320,7 @@ int main()
 =======
                     LOG_SERVER("Failed to release %s from Train %d", ts, req.intersection, req.train_id);
 >>>>>>> Stashed changes
+                    LOG_SERVER("Failed to release %s from Train %d", req.intersection, req.train_id);
                 }
             }
         }
