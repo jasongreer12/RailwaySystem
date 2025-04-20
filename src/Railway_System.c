@@ -28,7 +28,6 @@ Updated 4/13/2025
 // This file uses code from server.c authored by Jason Greer
 
 #define LINE_MAX 256
-//#define TIME_SHM_NAME "/sim_time_shm"
 
 // helper to map intersection name in index in iEntries[]
 static int find_intersection_index(const IntersectionEntry entries[],
@@ -45,17 +44,7 @@ static int find_intersection_index(const IntersectionEntry entries[],
     return -1;
 }
 
-// Helper to format the clock to [HH:MM:SS]
-// static void format_timestamp(int sec, char *buf) {
-//     int h = sec / 3600;
-//     int m = (sec % 3600) / 60;
-//     int s = sec % 60;
-//     sprintf(buf, "[%02d:%02d:%02d]", h, m, s);
-// }
-
-
-int main()
-{
+int main(){
     // initialize both loggers
     log_init("simulation.log", 1);
     LOG_SERVER("Initializing Train Movement Simulation");
@@ -82,16 +71,17 @@ int main()
     // if (!clk) { fprintf(stderr, "Failed time shm\n"); exit(1); }
     
     // set up shared memory 
-    size_t shm_size;
-    SharedIntersection *shared_intersections =
-        init_shared_memory("/intersection_shm", &shm_size);
-    if (!shared_intersections)
-    {
-        LOG_SERVER("Failed to initialize shared memory");
-        fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
-        exit(1);
-    }
-    LOG_SERVER("Shared memory initialized");
+    // MOVED TO LOGGER FILE
+    // size_t shm_size;
+    // SharedIntersection *shared_intersections =
+    //     init_shared_memory("/intersection_shm", &shm_size);
+    // if (!shared_intersections)
+    // {
+    //     LOG_SERVER("Failed to initialize shared memory");
+    //     fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
+    //     exit(1);
+    // }
+    // LOG_SERVER("Shared memory initialized");
 
     // parse trains
     TrainEntry trains[LINE_MAX];
@@ -137,7 +127,7 @@ int main()
         exit(1);
     }
     LOG_SERVER("Message queue ready (ID: %d)", msgid);
-    printf("%s [SERVER] Message queue ready (ID: %d)\n", getFakeTime(&shared_intersections[0]), msgid);
+    printf("%s [SERVER] Message queue ready (ID: %d)\n", getFakeTime(), msgid);
 
     // main server loop
     Message req, resp;
@@ -153,7 +143,7 @@ int main()
 
         if (msgrcv(msgid, &req, sizeof(req) - sizeof(long), 1, 0) == -1)
         {
-            setFakeSec(&shared_intersections[0], 1);
+            setFakeSec(1);
             LOG_SERVER("msgrcv failed: %s", strerror(errno));
             perror("[SERVER] msgrcv");
             continue;
@@ -162,7 +152,7 @@ int main()
         // if STOP then break
         if (strcmp(req.action, "STOP") == 0)
         {
-            setFakeSec(&shared_intersections[0], 1);
+            setFakeSec(1);
             LOG_SERVER("Received STOP signal. Exiting server loop");
             break;
         }
@@ -198,7 +188,7 @@ int main()
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(&shared_intersections[0], 1);
+                        setFakeSec(1);
                         LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
                     }
                     else
@@ -209,7 +199,7 @@ int main()
                         strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(&shared_intersections[0], 1);
+                        setFakeSec(1);
                         LOG_SERVER("%s WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
                     }
                 }
@@ -220,7 +210,7 @@ int main()
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                     //now = increment_time(clk, 1);
                     //format_timestamp(now, ts);
-                    setFakeSec(&shared_intersections[0], 1);
+                    setFakeSec(1);
                     LOG_SERVER("WAITING: full, Train %d queued",  req.intersection, req.train_id);
                 }
             }
@@ -245,7 +235,7 @@ int main()
                             add_holder(shared_intersections, idx, next_train);
                             //now = increment_time(clk, 1);
                             //format_timestamp(now, ts);
-                            setFakeSec(&shared_intersections[0], 1);
+                            setFakeSec(1);
                             LOG_SERVER("Granted waiting train %d", next_train, req.intersection);
 
 
@@ -266,27 +256,27 @@ int main()
                                        sizeof(grant_msg) - sizeof(long),
                                        0) == -1)
                             {
-                                setFakeSec(&shared_intersections[0], 1);
+                                setFakeSec(1);
                                 LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
                                            next_train, strerror(errno));
                                 char errBuff[64];
-                                snprintf(errBuff, sizeof(errBuff), "%s [SERVER] msgsnd(GRANT) to Train %d failed: %s", getFakeTime(&shared_intersections[0]), next_train, strerror(errno));
+                                snprintf(errBuff, sizeof(errBuff), "%s [SERVER] msgsnd(GRANT) to Train %d failed: %s", getFakeTime(), next_train, strerror(errno));
                                 perror(errBuff);
                             }
                             else
                             {
-                                setFakeSec(&shared_intersections[0], 1);
+                                setFakeSec(1);
                                 LOG_SERVER("Sent response: Train %d \"GRANT\" on %s", 
                                            next_train, req.intersection);
                                 printf("%s [SERVER] Sent response: Train %d \"GRANT\" on %s\n",
-                                       getFakeTime(&shared_intersections[0]), next_train, req.intersection);
+                                       getFakeTime(), next_train, req.intersection);
                             }
                         }
 
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(&shared_intersections[0], 1);
+                        setFakeSec(1);
                         LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
                     }
                     else
@@ -311,16 +301,16 @@ int main()
         }
         else
         {
-            setFakeSec(&shared_intersections[0], 1);
+            setFakeSec(1);
             LOG_SERVER("Sent response: Train %d \"%s\" on %s",
                        resp.train_id, resp.action, resp.intersection);
-            printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(&shared_intersections[0]),
+            printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(),
                    resp.train_id, resp.action, resp.intersection);
         }
     }
 
     // clean the queue
-    setFakeSec(&shared_intersections[0], 1);
+    setFakeSec(1);
     if (msgctl(msgid, IPC_RMID, NULL) == -1)
     {
         LOG_SERVER("msgctl(IPC_RMID) failed: %s", strerror(errno));
@@ -329,13 +319,14 @@ int main()
     else
     {
         LOG_SERVER("Message queue removed");
-        printf("%s [SERVER] Message queue removed. Exiting.\n", getFakeTime(&shared_intersections[0]));
+        printf("%s [SERVER] Message queue removed. Exiting.\n", getFakeTime());
     }
 
-    // cleanup clock and shared memory
-    // destroy_time(clk, TIME_SHM_NAME, time_size);
-    destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
-    LOG_SERVER("Shared memory cleaned up");
+    // ofloaded cleanup to logger
+    // // cleanup clock and shared memory
+    // // destroy_time(clk, TIME_SHM_NAME, time_size);
+    // destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
+    // LOG_SERVER("Shared memory cleaned up");
 
     // final system state : Note: this was causing error so i commented out
     //log_train_event_csv_ex(csv_file, 0, "SYSTEM", "SHUTDOWN", "OK", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);

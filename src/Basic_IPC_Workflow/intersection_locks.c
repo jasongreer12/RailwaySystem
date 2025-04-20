@@ -12,17 +12,17 @@
 
 //local time functions. Saves by not have to declare the
 //shared intersection every time we need to call the time functions.
-void increaseTime(int inc){
-    SharedIntersection *si = &shared_intersections[0];
-    setFakeSec(si, inc);
-}
+// void increaseTime(int inc){
+//     SharedIntersection *si = &shared_intersections[0];
+//     setFakeSec(inc);
+// }
 
-char *getTime(){
-    SharedIntersection *si = &shared_intersections[0];
-    char *timeString = malloc(11);
-    snprintf(timeString, 11, "%s", getFakeTime(si));
-    return timeString;
-}
+// char *getTime(){
+//     SharedIntersection *si = &shared_intersections[0];
+//     char *timeString = malloc(11);
+//     snprintf(timeString, 11, "%s", getFakeTime());
+//     return timeString;
+// }
 
 // Initialize mutex for intersection with capacity 1
 bool init_mutex_lock(Intersection *intersection) {
@@ -37,7 +37,7 @@ bool init_mutex_lock(Intersection *intersection) {
         return false;
     }
     
-    printf("%s Initialized mutex for intersection %s (capacity 1)\n", getTime(), intersection->name);
+    printf("%s Initialized mutex for intersection %s (capacity 1)\n", getFakeTime(), intersection->name);
     return true;
 }
 
@@ -65,7 +65,7 @@ bool init_semaphore_lock(Intersection *intersection) {
         return false;
     }
     
-    printf("%s Initialized semaphore for intersection %s (capacity %d)\n",getTime(), intersection->name, intersection->capacity);
+    printf("%s Initialized semaphore for intersection %s (capacity %d)\n",getFakeTime(), intersection->name, intersection->capacity);
     return true;
 }
 
@@ -77,7 +77,7 @@ int acquire_lock(Intersection *intersection) {
     }
     
     int result = 0;
-    increaseTime(1);
+    setFakeSec(1);
     if (intersection->capacity == 1) {
         // For capacity 1 use mutex
         result = pthread_mutex_lock(&intersection->mutex);
@@ -85,7 +85,7 @@ int acquire_lock(Intersection *intersection) {
             perror("Failed to acquire mutex lock");
             return -1;
         }
-        printf("%s Acquired mutex lock for intersection %s\n", getTime(), intersection->name);
+        printf("%s Acquired mutex lock for intersection %s\n", getFakeTime(), intersection->name);
     } else {
         // For capacity > 1 use semaphore
         result = sem_wait(intersection->semaphore);
@@ -93,7 +93,7 @@ int acquire_lock(Intersection *intersection) {
             perror("Failed to acquire semaphore lock");
             return -1;
         }
-        printf("%s Acquired semaphore lock for intersection %s\n", getTime(), intersection->name);
+        printf("%s Acquired semaphore lock for intersection %s\n", getFakeTime(), intersection->name);
     }
     
     return 0;
@@ -107,7 +107,7 @@ int release_lock(Intersection *intersection) {
     }
     
     int result = 0;
-    increaseTime(1);
+    setFakeSec(1);
     
     if (intersection->capacity == 1) {
         // For capacity 1 use mutex
@@ -116,8 +116,8 @@ int release_lock(Intersection *intersection) {
             perror("Failed to release mutex lock");
             return -1;
         }
-        increaseTime(1); // Increment time by 1 second
-        printf("%s Released mutex lock for intersection %s\n", getTime(), intersection->name);
+        setFakeSec(1); // Increment time by 1 second
+        printf("%s Released mutex lock for intersection %s\n", getFakeTime(), intersection->name);
     } else {
         // For capacity > 1 use semaphore
         result = sem_post(intersection->semaphore);
@@ -125,8 +125,8 @@ int release_lock(Intersection *intersection) {
             perror("Failed to release semaphore lock");
             return -1;
         }
-        increaseTime(1);
-        printf("%s Released semaphore lock for intersection %s\n", getTime(), intersection->name);
+        setFakeSec(1);
+        printf("%s Released semaphore lock for intersection %s\n", getFakeTime(), intersection->name);
     }
     
     return 0;

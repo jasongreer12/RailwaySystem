@@ -10,6 +10,10 @@
 #include "../Basic_IPC_Workflow/fake_sec.h" // for getFakeTime()
 #include "../Shared_Memory_Setup/Memory_Segments.h" // for SharedIntersection
 
+//GLOBAL SHARED INTERSECTIONS ARRAY AND SIZE
+extern SharedIntersection *shared_intersections;
+extern size_t shm_size; // moved to global to reduce redundant init calls
+
 void log_init(const char *filename, int truncate);
 
 /* Write a log event.
@@ -31,14 +35,14 @@ Updated by jarett on 4.19 to include time string
 */
 #define LOG_SERVER(fmt, ...) do { \
     char comp[64];\
-    snprintf(comp, sizeof(comp), "%s SERVER", getFakeTime(&shared_intersections[0]));\
+    snprintf(comp, sizeof(comp), "%s SERVER", getFakeTime());\
     log_event(comp, fmt, ##__VA_ARGS__);\
 } while(0)
 
 //comp size increased to 32 to accommodate addition of time string
 #define LOG_TRAIN(id, fmt, ...) do { \
     char comp[64]; \
-    snprintf(comp, sizeof(comp), "%s TRAIN%d", getFakeTime(&shared_intersections[0]), (id)); \
+    snprintf(comp, sizeof(comp), "%s TRAIN%d", getFakeTime(), (id)); \
     log_event(comp, fmt, ##__VA_ARGS__); \
 } while(0)
 

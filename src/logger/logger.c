@@ -8,8 +8,9 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define _GNU_SOURCE
-#include "logger.h"
+#include "logger.h" // intialize log
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,10 +20,20 @@
 #include <sys/types.h> // for stat()
 #include <stdbool.h>   // for bool type
 #include "../Basic_IPC_Workflow/fake_sec.h" // for getFakeTime()
+#include "../Shared_Memory_Setup/Memory_Segments.h" // for SharedIntersection Struct
 
 static int log_fd = -1;
+// SharedIntersection *shared_intersections = NULL;
+size_t shm_size; // moved to global to reduce redundant init calls
 
 void log_init(const char *filename, int truncate) {
+    // initialize shared memory here to reduce redundant init calls
+    shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+    if (!shared_intersections) {
+        fprintf(stderr, "Failed to initialize shared memory.\n");
+        exit(1);
+    }
+    
     // Set up flags for opening the file. We always open for write and append.
     int flags = O_CREAT | O_WRONLY | O_APPEND;
     // If truncate flag is set (non-zero), add O_TRUNC to always create a new file.
@@ -66,5 +77,10 @@ void log_close(void) {
     if (log_fd >= 0) {
         close(log_fd);
         log_fd = -1;
+    }
+    
+    if (shared_intersections) {
+        destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
+        shared_intersections = NULL;
     }
 }

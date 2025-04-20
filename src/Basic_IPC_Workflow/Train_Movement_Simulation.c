@@ -17,6 +17,7 @@
 #include "logger.h"       // log_init, LOG_CLIENT, log_close
 #include "parser.h"       // getTrains, TrainEntry
 #include "resource_allocation_graph.h"
+#include "../Shared_Memory_Setup/Memory_Segments.h" // SharedIntersection
 
 #define MSG_KEY    1234
 #define MAX_NAME   64
