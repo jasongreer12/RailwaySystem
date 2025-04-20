@@ -158,6 +158,65 @@ int main()
         pids[i] = pid;
     }
 
+// Initialize the Resource Allocation Graph
+init_graph();
+
+Message msg; // Message structure for IPC
+int stop_flag = 0; // Flag to stop the server loop
+
+while (!stop_flag) {
+    // Wait for a message from any train (mtype = 1)
+    if (msgrcv(msgid, &msg, sizeof(msg) - sizeof(long), 1, 0) == -1) {
+        LOG_SERVER("msgrcv failed: %s", strerror(errno));
+        exit(1);
+    }
+
+    // Handle STOP message to terminate the loop
+    if (strcmp(msg.action, "STOP") == 0) {
+        LOG_SERVER("Received STOP signal.");
+        stop_flag = 1; // Set the flag to stop the server loop
+        continue; // Skip processing other messages
+    }
+
+    LOG_SERVER("Received %s from Train %d for %s", msg.action, msg.train_id, msg.intersection);
+
+    if (strcmp(msg.action, "ACQUIRE") == 0) { // Handle ACQUIRE request
+        // Check if the intersection is available
+        // (In a real implementation, you would check the intersection's state here)
+        // Add request edge to RAG (Train ➝ Intersection)
+        add_request_edge(msg.train_id, msg.intersection);
+
+        // Check for deadlock
+        if (detect_deadlock()) { // If deadlock is detected
+            LOG_SERVER("DEADLOCK DETECTED: Train %d waiting for %s", msg.train_id, msg.intersection);
+            print_graph();  // Show the current RAG state
+            continue; // Skip granting to avoid worsening the deadlock
+        }
+
+        // Grant access and convert edge to allocation (Intersection -> Train)
+        add_allocation_edge(msg.train_id, msg.intersection);
+
+        // Send GRANT message to train
+        Message grant = {.mtype = msg.train_id + 100, .train_id = msg.train_id}; // mtype for GRANT is train_id + 100
+        strncpy(grant.intersection, msg.intersection, MAX_NAME);
+        snprintf(grant.action, sizeof(grant.action), "GRANT"); // Set action to GRANT
+        msgsnd(msgid, &grant, sizeof(grant) - sizeof(long), 0); // Send the message
+        LOG_SERVER("Granted %s to Train %d", msg.intersection, msg.train_id);
+    }
+
+    else if (strcmp(msg.action, "RELEASE") == 0) { // Handle RELEASE request
+        // Remove allocation edge (Intersection -> Train)
+        remove_edges(msg.train_id, msg.intersection); // Remove the allocation edge
+
+        // Send OK message to train
+        Message ok = {.mtype = msg.train_id + 100, .train_id = msg.train_id}; 
+        strncpy(ok.intersection, msg.intersection, MAX_NAME);
+        snprintf(ok.action, sizeof(ok.action), "OK"); // Set action to OK
+        msgsnd(msgid, &ok, sizeof(ok) - sizeof(long), 0); // Send the message
+        LOG_SERVER("Released %s from Train %d", msg.intersection, msg.train_id);
+    }
+}
+
     // wait for all train children to finish
     for (int i = 0; i < train_count; i++)
     {
