@@ -137,7 +137,7 @@ int main()
         exit(1);
     }
     LOG_SERVER("Message queue ready (ID: %d)", msgid);
-    printf("%s [SERVER] Message queue ready (ID: %d)\n", getFakeTime(), msgid);
+    printf("%s [SERVER] Message queue ready (ID: %d)\n", getFakeTime(&shared_intersections[0]), msgid);
 
     // main server loop
     Message req, resp;
@@ -153,7 +153,7 @@ int main()
 
         if (msgrcv(msgid, &req, sizeof(req) - sizeof(long), 1, 0) == -1)
         {
-            setFakeSec(1);
+            setFakeSec(&shared_intersections[0], 1);
             LOG_SERVER("msgrcv failed: %s", strerror(errno));
             perror("[SERVER] msgrcv");
             continue;
@@ -162,7 +162,7 @@ int main()
         // if STOP then break
         if (strcmp(req.action, "STOP") == 0)
         {
-            setFakeSec(1);
+            setFakeSec(&shared_intersections[0], 1);
             LOG_SERVER("Received STOP signal. Exiting server loop");
             break;
         }
@@ -198,7 +198,7 @@ int main()
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(1);
+                        setFakeSec(&shared_intersections[0], 1);
                         LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
                     }
                     else
@@ -209,7 +209,7 @@ int main()
                         strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(1);
+                        setFakeSec(&shared_intersections[0], 1);
                         LOG_SERVER("%s WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
                     }
                 }
@@ -220,7 +220,7 @@ int main()
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                     //now = increment_time(clk, 1);
                     //format_timestamp(now, ts);
-                    setFakeSec(1);
+                    setFakeSec(&shared_intersections[0], 1);
                     LOG_SERVER("WAITING: full, Train %d queued",  req.intersection, req.train_id);
                 }
             }
@@ -245,7 +245,7 @@ int main()
                             add_holder(shared_intersections, idx, next_train);
                             //now = increment_time(clk, 1);
                             //format_timestamp(now, ts);
-                            setFakeSec(1);
+                            setFakeSec(&shared_intersections[0], 1);
                             LOG_SERVER("Granted waiting train %d", next_train, req.intersection);
 
 
@@ -266,27 +266,27 @@ int main()
                                        sizeof(grant_msg) - sizeof(long),
                                        0) == -1)
                             {
-                                setFakeSec(1);
+                                setFakeSec(&shared_intersections[0], 1);
                                 LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
                                            next_train, strerror(errno));
                                 char errBuff[64];
-                                snprintf(errBuff, sizeof(errBuff), "%s [SERVER] msgsnd(GRANT) to Train %d failed: %s", getFakeTime(), next_train, strerror(errno));
+                                snprintf(errBuff, sizeof(errBuff), "%s [SERVER] msgsnd(GRANT) to Train %d failed: %s", getFakeTime(&shared_intersections[0]), next_train, strerror(errno));
                                 perror(errBuff);
                             }
                             else
                             {
-                                setFakeSec(1);
+                                setFakeSec(&shared_intersections[0], 1);
                                 LOG_SERVER("Sent response: Train %d \"GRANT\" on %s", 
                                            next_train, req.intersection);
                                 printf("%s [SERVER] Sent response: Train %d \"GRANT\" on %s\n",
-                                       getFakeTime(), next_train, req.intersection);
+                                       getFakeTime(&shared_intersections[0]), next_train, req.intersection);
                             }
                         }
 
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         //now = increment_time(clk, 1);
                         //format_timestamp(now, ts);
-                        setFakeSec(1);
+                        setFakeSec(&shared_intersections[0], 1);
                         LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
                     }
                     else
@@ -311,16 +311,16 @@ int main()
         }
         else
         {
-            setFakeSec(1);
+            setFakeSec(&shared_intersections[0], 1);
             LOG_SERVER("Sent response: Train %d \"%s\" on %s",
                        resp.train_id, resp.action, resp.intersection);
-            printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(),
+            printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(&shared_intersections[0]),
                    resp.train_id, resp.action, resp.intersection);
         }
     }
 
     // clean the queue
-    setFakeSec(1);
+    setFakeSec(&shared_intersections[0], 1);
     if (msgctl(msgid, IPC_RMID, NULL) == -1)
     {
         LOG_SERVER("msgctl(IPC_RMID) failed: %s", strerror(errno));
@@ -329,7 +329,7 @@ int main()
     else
     {
         LOG_SERVER("Message queue removed");
-        printf("%s [SERVER] Message queue removed. Exiting.\n", getFakeTime());
+        printf("%s [SERVER] Message queue removed. Exiting.\n", getFakeTime(&shared_intersections[0]));
     }
 
     // cleanup clock and shared memory

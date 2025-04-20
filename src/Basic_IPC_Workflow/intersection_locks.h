@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
+#include "../Shared_Memory_Setup/Memory_Segments.h" // for SharedIntersection
 
 // Max length of intersection name
 #define MAX_NAME_LENGTH 32
@@ -28,6 +29,8 @@ typedef struct {
     char semName[MAX_NAME_LENGTH];   // Unique name for semaphore
 } Intersection;
 
+// GLOBAL SHARED INTERSECTIONS ARRAY
+extern SharedIntersection *shared_intersections; 
 
 // Initialize mutex for intersection with capacity 1
 // Returns true on success, false on failure

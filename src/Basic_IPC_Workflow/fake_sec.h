@@ -23,7 +23,6 @@ example:
 /* 
 NEW FORMAT: Moving seconds, minutes, and hours to the shared memory structure
 */
-
 void setFakeSec(SharedIntersection* si, int seconds);
 const char* getFakeTime(SharedIntersection* si);
 

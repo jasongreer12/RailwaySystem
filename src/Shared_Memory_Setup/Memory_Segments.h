@@ -27,12 +27,21 @@ typedef struct {
 
     int wait_count;                 // how many trains waiting
     int wait_queue[MAX_TRAINS];     // train IDs waiting in FIFO
+
+    //Time -- moved from fake_sec.c
+    int fakeSec;
+    int fakeMin;
+    int fakeMinSec;
+    int fakeHour;
 } SharedIntersection;
 
 // typedef struct {
 //     pthread_mutex_t time_mutex;  // protect sim_time
 //     int             sim_time;    // in seconds
 // } TimeKeeper;
+
+// extern makes array global to all files in codebase
+extern SharedIntersection *shared_intersections; 
 
 // Function declarations
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size);

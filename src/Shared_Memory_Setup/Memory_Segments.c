@@ -67,10 +67,13 @@
 //     return t;
 // }
 
+//pointer to array of shared_intersections in shared memory
+SharedIntersection* shared_intersections = NULL;
+
 // Function to initialize shared memory and intersections
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
     int shm_fd;
-    SharedIntersection *shared_intersections;
+    //SharedIntersection *shared_intersections; Moving to global
 
     *shm_size = sizeof(SharedIntersection) * NUM_INTERSECTIONS;
 
@@ -131,6 +134,12 @@ SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
         si->wait_count  = 0;
         memset(si->holders,    0, sizeof(si->holders));
         memset(si->wait_queue, 0, sizeof(si->wait_queue));
+
+        //Fake time
+        si->fakeSec = 0;
+        si->fakeMin = 0;
+        si->fakeMinSec = 0;
+        si->fakeHour = 0;
 
         // Log the initialization of each shared intersection to the CSV
         LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, si->semName, NULL);
