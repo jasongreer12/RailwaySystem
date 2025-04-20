@@ -1,4 +1,7 @@
 // test_deadlock.c
+// Author: Zachary Oyer
+// Date: 4-18-2025
+// Group B
 // Simple test for deadlock detection using Resource Allocation Graph
 
 #include <stdio.h>
