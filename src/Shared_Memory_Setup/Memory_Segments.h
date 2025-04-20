@@ -29,14 +29,25 @@ typedef struct {
     int wait_queue[MAX_TRAINS];     // train IDs waiting in FIFO
 } SharedIntersection;
 
+typedef struct {
+    pthread_mutex_t time_mutex;  // protect sim_time
+    int             sim_time;    // in seconds
+} TimeKeeper;
+
 // Function declarations
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size);
 void destroy_shared_memory(SharedIntersection *shared_intersections, const char *shm_name, size_t shm_size);
 
-//functions for tracking
+// Functions for tracking
 int  add_holder     (SharedIntersection *shared, int idx, int train_id);
 int  remove_holder  (SharedIntersection *shared, int idx, int train_id);
 void enqueue_waiter (SharedIntersection *shared, int idx, int train_id);
 int  dequeue_waiter (SharedIntersection *shared, int idx);
+
+// Timekeeping functions
+TimeKeeper* init_time (const char *shm_name, size_t *shm_size);
+void       destroy_time (TimeKeeper   *shared, const char *shm_name, size_t shm_size);
+int        increment_time      (TimeKeeper   *shared, int delta);
+int        get_sim_time        (TimeKeeper   *shared);
 
 #endif // MEMORY_SEGMENTS_H
