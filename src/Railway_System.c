@@ -74,16 +74,12 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-<<<<<<< Updated upstream
-    // set up shared memory (for whatever data is needed)
-=======
     // Initialize simulated clock
     size_t time_size;
     TimeKeeper *clk = init_time(TIME_SHM_NAME, &time_size);
     if (!clk) { fprintf(stderr, "Failed time shm\n"); exit(1); }
     
     // set up shared memory 
->>>>>>> Stashed changes
     size_t shm_size;
     SharedIntersection *shared_intersections =
         init_shared_memory("/intersection_shm", &shm_size);
@@ -232,9 +228,6 @@ int main()
                         {
                             // Grant the waiting train by adding it as a holder
                             add_holder(shared_intersections, idx, next_train);
-<<<<<<< Updated upstream
-                            LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
-=======
                             now = increment_time(clk, 1);
                             format_timestamp(now, ts);
                             LOG_SERVER("Granted waiting train %d for %s", ts, next_train, req.intersection);
@@ -267,7 +260,6 @@ int main()
                                 printf("[SERVER] Sent response: Train %d \"GRANT\" on %s\n",
                                        next_train, req.intersection);
                             }
->>>>>>> Stashed changes
                         }
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         now = increment_time(clk, 1);
@@ -283,11 +275,7 @@ int main()
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-<<<<<<< Updated upstream
-                    LOG_SERVER("Failed to release %s from Train %d", req.train_id, req.intersection);
-=======
                     LOG_SERVER("Failed to release %s from Train %d", ts, req.intersection, req.train_id);
->>>>>>> Stashed changes
                 }
             }
         }
