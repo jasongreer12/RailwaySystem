@@ -27,6 +27,7 @@ Updated 4/13/2025
 // This file uses code from server.c authored by Jason Greer
 
 #define LINE_MAX 256
+#define TIME_SHM_NAME "/sim_time_shm"
 
 // helper to map intersection name in index in iEntries[]
 static int find_intersection_index(const IntersectionEntry entries[],
@@ -42,6 +43,15 @@ static int find_intersection_index(const IntersectionEntry entries[],
     }
     return -1;
 }
+
+// Helper to format the clock to [HH:MM:SS]
+static void format_timestamp(int sec, char *buf) {
+    int h = sec / 3600;
+    int m = (sec % 3600) / 60;
+    int s = sec % 60;
+    sprintf(buf, "[%02d:%02d:%02d]", h, m, s);
+}
+
 
 int main()
 {
@@ -65,6 +75,11 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
+    // Initialize simulated clock
+    size_t time_size;
+    TimeKeeper *clk = init_time(TIME_SHM_NAME, &time_size);
+    if (!clk) { fprintf(stderr, "Failed time shm\n"); exit(1); }
+    
     // set up shared memory 
     size_t shm_size;
     SharedIntersection *shared_intersections =
@@ -127,6 +142,10 @@ int main()
     Message req, resp;
     while (1)
     {
+        //  before reading request, advance time by 1 and stamp
+        int now = increment_time(clk, 1);
+        char ts[16]; format_timestamp(now, ts);
+
         if (msgrcv(msgid, &req, sizeof(req) - sizeof(long), 1, 0) == -1)
         {
             LOG_SERVER("msgrcv failed: %s", strerror(errno));
@@ -141,7 +160,7 @@ int main()
             break;
         }
 
-        LOG_SERVER("Received: Train %d requests \"%s\" on %s",
+        LOG_SERVER("Received: Train %d requests \"%s\" on %s", ts,
                    req.train_id, req.action, req.intersection);
 
         // prepare common parts of response
@@ -170,7 +189,9 @@ int main()
                     if (result == 0)
                     {
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
-                        LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
+                        now = increment_time(clk, 1);
+                        format_timestamp(now, ts);
+                        LOG_SERVER("GRANTED %s to Train %d", ts, req.intersection, req.train_id);
                     }
                     else
                     {
@@ -178,7 +199,9 @@ int main()
                         remove_holder(shared_intersections, idx, req.train_id);
                         enqueue_waiter(shared_intersections, idx, req.train_id);
                         strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                        LOG_SERVER("WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
+                        now = increment_time(clk, 1);
+                        format_timestamp(now, ts);
+                        LOG_SERVER("WAITING: Local lock error, Train %d queued for %s", ts, req.train_id, req.intersection);
                     }
                 }
                 else
@@ -186,7 +209,9 @@ int main()
                     // intersection at capacity add the train to the waiting queue
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                    LOG_SERVER("WAITING: %s full, Train %d queued", req.intersection, req.train_id);
+                    now = increment_time(clk, 1);
+                    format_timestamp(now, ts);
+                    LOG_SERVER("WAITING: %s full, Train %d queued", ts, req.intersection, req.train_id);
                 }
             }
             else // RELEASE
@@ -208,7 +233,10 @@ int main()
                             // LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
                             // strncpy(resp.action, "GRANT", sizeof(resp.action) - 1); // send grant message to train waiting
                             add_holder(shared_intersections, idx, next_train);
-                            LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
+                            now = increment_time(clk, 1);
+                            format_timestamp(now, ts);
+                            LOG_SERVER("Granted waiting train %d for %s", ts, next_train, req.intersection);
+
 
                             // send a  GRANT message to that train whose waiting
                             Message grant_msg;
@@ -227,13 +255,14 @@ int main()
                                        sizeof(grant_msg) - sizeof(long),
                                        0) == -1)
                             {
-                                LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
+                                LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s", ts,
+
                                            next_train, strerror(errno));
                                 perror("[SERVER] msgsnd GRANT");
                             }
                             else
                             {
-                                LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
+                                LOG_SERVER("Sent response: Train %d \"GRANT\" on %s", ts,
                                            next_train, req.intersection);
                                 printf("[SERVER] Sent response: Train %d \"GRANT\" on %s\n",
                                        next_train, req.intersection);
@@ -241,18 +270,20 @@ int main()
                         }
 
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
-                        LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                        now = increment_time(clk, 1);
+                        format_timestamp(now, ts);
+                        LOG_SERVER("Released %s from Train %d", ts, req.intersection, req.train_id);
                     }
                     else
                     {
                         strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-                        LOG_SERVER("Failed to remove Train %d from holders of %s", req.train_id, req.intersection);
+                        LOG_SERVER("Failed to remove Train %d from holders of %s", ts, req.train_id, req.intersection);
                     }
                 }
                 else
                 {
                     strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-                    LOG_SERVER("Failed to release %s from Train %d", req.intersection, req.train_id);
+                    LOG_SERVER("Failed to release %s from Train %d", ts, req.intersection, req.train_id);
                 }
             }
         }
@@ -284,7 +315,8 @@ int main()
         printf("[SERVER] Message queue removed. Exiting.\n");
     }
 
-    // cleanup shared memory
+    // cleanup clock and shared memory
+    destroy_time(clk, TIME_SHM_NAME, time_size);
     destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
     LOG_SERVER("Shared memory cleaned up");
 
