@@ -4,7 +4,7 @@ Group: B
 Email: jrich26@okstate.edu
 Description: This file randomizes the size of intersections A-E and saves the results to intersections.txt
 */
-/*
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -40,4 +40,3 @@ int main()
 
     return 0;
 }
-*/

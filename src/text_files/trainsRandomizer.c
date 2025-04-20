@@ -6,7 +6,7 @@ Description: This file randomizes the routes for four trains and saves it to the
 trains.txt. The program makes sure to not give different trains the same final destination to
 avoid routes that are impossible to complete.
 */
-/*
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -98,4 +98,3 @@ int main()
     printf("Train routes randomized for trains.txt\n");
     return 0;
 }
-*/

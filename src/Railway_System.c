@@ -45,9 +45,10 @@ static int find_intersection_index(const IntersectionEntry entries[],
 
 int main()
 {
+    init_graph(); // initialize resource allo graph
     // initialize both loggers
     log_init("simulation.log", 1);
-    LOG_SERVER("Initializing Train Movement Simulation");
+    // LOG_SERVER("Initializing Train Movement Simulation"); unneeded log
 
     FILE *csv_file = csv_logger_init();
     if (!csv_file)
@@ -57,7 +58,7 @@ int main()
         exit(1);
     }
 
-    // log system startup using system message 
+    // log system startup using system message
     Message sys_msg = {
         .mtype = 1,
         .train_id = 0};
@@ -65,7 +66,7 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-    // set up shared memory 
+    // set up shared memory
     size_t shm_size;
     SharedIntersection *shared_intersections =
         init_shared_memory("/intersection_shm", &shm_size);
@@ -75,18 +76,18 @@ int main()
         fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
         exit(1);
     }
-    LOG_SERVER("Shared memory initialized");
+    //LOG_SERVER("Shared memory initialized");
 
     // parse trains
     TrainEntry trains[LINE_MAX];
     int trainCount = getTrains(trains);
-    LOG_SERVER("Parsed %d trains", trainCount);
+    //LOG_SERVER("Parsed %d trains", trainCount);
     printTrainEntries(trains, trainCount);
 
     // parse intersections
     IntersectionEntry iEntries[LINE_MAX];
     int intersectionCount = getIntersections(iEntries);
-    LOG_SERVER("Parsed %d intersections", intersectionCount);
+    LOG_SERVER("Initialized %d intersections:", intersectionCount);
     printIntersectionEntries(iEntries, intersectionCount);
 
     // build and initialize local locks array
@@ -111,6 +112,7 @@ int main()
                        locks[i].name, locks[i].capacity);
         }
     }
+    LOG_SERVER("\n");
 
     // set up message queue
     int msgid = msgget(MSG_KEY, IPC_CREAT | 0666);
@@ -120,7 +122,7 @@ int main()
         perror("[SERVER] msgget");
         exit(1);
     }
-    LOG_SERVER("Message queue ready (ID: %d)", msgid);
+    //LOG_SERVER("Message queue ready (ID: %d)", msgid);
     printf("[SERVER] Message queue ready (ID: %d)\n", msgid);
 
     // main server loop
@@ -142,7 +144,8 @@ int main()
         }
 
         /*LOG_SERVER("Received: Train %d requests \"%s\" on %s",
-                   req.train_id, req.action, req.intersection);*/ // unnecessary log as train is responsible for logging they sent a req
+                   req.train_id, req.action, req.intersection);*/
+        // unnecessary log as train is responsible for logging they sent a req
 
         // prepare common parts of response
         memset(&resp, 0, sizeof(resp));
@@ -159,9 +162,12 @@ int main()
         }
         else
         {
-            // process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
+
+            // process ACQUIRE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
+                // need to use resource allocation graph here with this function: add_request_edge(int train_id, const char* intersection)
+                add_request_edge(req.train_id, req.intersection);
                 // attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
                 if (add_holder(shared_intersections, idx, req.train_id))
                 {
@@ -170,7 +176,8 @@ int main()
                     if (result == 0)
                     {
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
-                        LOG_SERVER("GRANTED %s to Train %d", req.intersection, req.train_id);
+                        LOG_SERVER("GRANTED %s to Train %d\n", req.intersection, req.train_id);
+                        add_allocation_edge(req.train_id, req.intersection); // function automatically removes the request and adds the allocation
                     }
                     else
                     {
@@ -186,7 +193,14 @@ int main()
                     // intersection at capacity add the train to the waiting queue
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                    LOG_SERVER("WAITING: %s full, Train %d queued", req.intersection, req.train_id);
+                    LOG_SERVER("%d is locked. %d added to wait queue.\n", req.intersection, req.train_id);
+                    // after we enqueue a train to the wait list, we need to check if a deadlock has occured
+                    if (detect_deadlock()) {
+                        // if deadlock is detected need to forcibly remove an intersection from a train
+                        LOG_SERVER("Deadlock detected! Cycle: %d <> %d.\n", req.train_id, req.train_id); // need to add cycle here so formatting matches on project doc
+                        // need to add logic here to remove intersection from train
+
+                    }
                 }
             }
             else // RELEASE
@@ -208,7 +222,7 @@ int main()
                             // LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
                             // strncpy(resp.action, "GRANT", sizeof(resp.action) - 1); // send grant message to train waiting
                             add_holder(shared_intersections, idx, next_train);
-                            LOG_SERVER("Granted waiting train %d for %s", next_train, req.intersection);
+                            LOG_SERVER("GRANTED %s to Train %d\n", req.intersection, req.train_id);
 
                             // send a  GRANT message to that train whose waiting
                             Message grant_msg;
@@ -233,15 +247,15 @@ int main()
                             }
                             else
                             {
-                                LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
-                                           next_train, req.intersection);
+                                //LOG_SERVER("Sent response: Train %d \"GRANT\" on %s",
+                                           //next_train, req.intersection);
                                 printf("[SERVER] Sent response: Train %d \"GRANT\" on %s\n",
                                        next_train, req.intersection);
                             }
                         }
 
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
-                        LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                        //LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
                     }
                     else
                     {
@@ -265,8 +279,8 @@ int main()
         }
         else
         {
-            LOG_SERVER("Sent response: Train %d \"%s\" on %s",
-                       resp.train_id, resp.action, resp.intersection);
+            //LOG_SERVER("Sent response: Train %d \"%s\" on %s",
+                       //resp.train_id, resp.action, resp.intersection);
             printf("[SERVER] Sent response: Train %d \"%s\" on %s\n",
                    resp.train_id, resp.action, resp.intersection);
         }
@@ -289,7 +303,7 @@ int main()
     LOG_SERVER("Shared memory cleaned up");
 
     // final system state : Note: this was causing error so i commented out
-    //log_train_event_csv_ex(csv_file, 0, "SYSTEM", "SHUTDOWN", "OK", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
+    // log_train_event_csv_ex(csv_file, 0, "SYSTEM", "SHUTDOWN", "OK", getpid(), NULL, NULL, NULL, 0, false, 0, NULL, NULL);
 
     // close all loggers
     LOG_SERVER("SIMULATION COMPLETE. All trains reached destinations.");

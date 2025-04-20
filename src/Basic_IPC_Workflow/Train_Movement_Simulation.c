@@ -30,7 +30,7 @@ typedef struct
     char action[8]; // "ACQUIRE", "RELEASE"
 } Message;
 
-// each trains workflow: ACQUIRE then WAIT then GRANT then TRAVEL then ACQUIRE NEXT then RELEASE OLD then WAIT OK then repeat
+// trains process: ACQUIRE then WAIT then GRANT then TRAVEL then ACQUIRE NEXT then RELEASE OLD then WAIT OK then repeat
 void run_train(int msgid, int train_id, char *route[], int route_len)
 {
     Message req, resp;
@@ -61,7 +61,7 @@ void run_train(int msgid, int train_id, char *route[], int route_len)
                 exit(1);
             }
         } while (strcmp(resp.action, "GRANT") != 0);
-        LOG_TRAIN(train_id, "Received GRANT for %s", resp.intersection);
+        //LOG_TRAIN(train_id, "Received GRANT for %s", resp.intersection);
     }
 
     // now that all intersections are held we can traverse them
@@ -70,6 +70,7 @@ void run_train(int msgid, int train_id, char *route[], int route_len)
         sleep(1);
         LOG_TRAIN(train_id, "Traversed %s", route[i]);
     }
+    
 
     // release each intersection
     for (int i = 0; i < route_len; i++)
@@ -85,7 +86,7 @@ void run_train(int msgid, int train_id, char *route[], int route_len)
             LOG_TRAIN(train_id, "msgsnd(RELEASE) failed: %s", strerror(errno));
             exit(1);
         }
-        LOG_TRAIN(train_id, "Sent RELEASE for %s", route[i]);
+        //LOG_TRAIN(train_id, "Sent RELEASE for %s", route[i]);
     }
 
     // wait for OK on each
@@ -100,7 +101,7 @@ void run_train(int msgid, int train_id, char *route[], int route_len)
                 exit(1);
             }
         } while (strcmp(resp.action, "OK") != 0);
-        LOG_TRAIN(train_id, "Received OK for %s", resp.intersection);
+        //LOG_TRAIN(train_id, "Received OK for %s", resp.intersection);
     }
 }
 
@@ -108,7 +109,7 @@ int main()
 {
     // init logging
     log_init("simulation.log", 0);
-    LOG_SERVER("Starting train simulator");
+    //LOG_SERVER("Starting train simulator");
 
     // connect to the message queue
     int msgid = msgget(MSG_KEY, IPC_CREAT | 0666);
@@ -117,7 +118,7 @@ int main()
         LOG_SERVER("msgget failed: %s", strerror(errno));
         exit(1);
     }
-    LOG_SERVER("Message queue ready (ID: %d)", msgid);
+    //LOG_SERVER("Message queue ready (ID: %d)", msgid);
 
     // parse trains.txt
     TrainEntry trains[ITEM_COUNT_MAX];
@@ -127,7 +128,7 @@ int main()
         LOG_SERVER("Failed to parse trains.txt");
         exit(1);
     }
-    LOG_SERVER("Parsed %d trains", train_count);
+    LOG_SERVER("Parsed %d trains\n", train_count);
 
     // fork one child per train
     pid_t pids[ITEM_COUNT_MAX];
