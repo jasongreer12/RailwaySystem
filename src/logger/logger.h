@@ -23,15 +23,20 @@ void log_close(void);
 /* Convenience macros for common components.
  */
 
-//#define LOG_SERVER(fmt, ...) log_event("SERVER", fmt, ##__VA_ARGS__) //adjusting macro to incorporate time in log
+/*
+original macro
+#define LOG_SERVER(fmt, ...) log_event("SERVER", fmt, ##__VA_ARGS__) //adjusting macro to incorporate time in log
+Updated by jarett on 4.19 to include time string
+*/
 #define LOG_SERVER(fmt, ...) do { \
-    char comp[32];\
+    char comp[64];\
     snprintf(comp, sizeof(comp), "%s SERVER", getFakeTime());\
     log_event(comp, fmt, ##__VA_ARGS__);\
 } while(0)
 
+//comp size increased to 32 to accommodate addition of time string
 #define LOG_TRAIN(id, fmt, ...) do { \
-    char comp[32]; \
+    char comp[64]; \
     snprintf(comp, sizeof(comp), "%s TRAIN%d", getFakeTime(), (id)); \
     log_event(comp, fmt, ##__VA_ARGS__); \
 } while(0)
