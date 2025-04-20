@@ -2,9 +2,10 @@
 // Author: Jake Pinell
 // Group: B
 // Email: jpinell@okstate.edu
-// Date: 4-19-2025
-// Implementation of locks for intersections in the railway system. Initializes mutexes and semaphores for intersections based on their train capacity.
+// Date: 4-20-2025
+// Implementation of locks for intersections in the railway system. Initializes mutexes and counting semaphores for intersections based on their train capacity.
 // Implemented acquire and release functions for intersection locks. Cleans up all intersection locks after use.
+// Intersections with a train capacity of 1 are initialized with a mutex, if the capacity is > 1, the intersection is initialized with a semaphore.
 
 #include "intersection_locks.h"
 #include <fcntl.h>
