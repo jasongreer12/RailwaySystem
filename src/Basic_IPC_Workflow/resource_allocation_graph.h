@@ -1,7 +1,8 @@
 // resource_allocation_graph.h
 // Author: Zachary Oyer
+// Group: B
+// Email: zachary.oyer@okstate.edu
 // Date: 4-11-2025
-// Group B
 // Header file for the Resource Allocation Graph (RAG) module used to model resource dependencies between trains and intersections 
 // in the railway simulation. Provides function declarations for adding and removing edges, cycle detection, and graph visualization.
 #ifndef RESOURCE_ALLOCATION_GRAPH_H

@@ -1,7 +1,8 @@
 // this is the old code used in Train_Movement_Simulation.c
 // Author: Zachary Oyer
+// Group: B
+// Email: zachary.oyer@okstate.edu
 // Date: 4-4-2025
-// Group B
 // Simulates train processes requesting and releasing intersections using
 // System V message queues for IPC. Forks multiple train processes and
 // runs a central server loop to handle intersection locks.
@@ -32,11 +33,11 @@ typedef struct {
 // Sends an IPC message to the message queue
 void send_msg(int msgid, int train_id, const char* intersection, const char* action) {
     Message msg;
-    msg.mtype = 1;
-    msg.train_id = train_id;
-    strncpy(msg.intersection, intersection, MAX_NAME);
-    strncpy(msg.action, action, sizeof(msg.action));
-    msgsnd(msgid, &msg, sizeof(Message) - sizeof(long), 0);
+    msg.mtype = 1; // All messages have type 1; can be expanded later for prioritization
+    msg.train_id = train_id; // Set the sender train's ID
+    strncpy(msg.intersection, intersection, MAX_NAME); // Copy the intersection name
+    strncpy(msg.action, action, sizeof(msg.action)); // Copy the action ("ACQUIRE" or "RELEASE")
+    msgsnd(msgid, &msg, sizeof(Message) - sizeof(long), 0); // Send the message to the System V message queue
 }
 
 // Simulates a train traveling through a list of intersections
@@ -61,27 +62,27 @@ void run_train(int msgid, int train_id, const char* route[], int route_len) {
 void init_intersections() {
     // IntersectionA - single train at a time (mutex)
     strcpy(intersections[0].name, "IntersectionA");
-    intersections[0].capacity = 1;
+    intersections[0].capacity = 1; // Mutex lock
     init_mutex_lock(&intersections[0]);
     
     // IntersectionB - allows 2 trains (semaphore)
     strcpy(intersections[1].name, "IntersectionB");
-    intersections[1].capacity = 2;
+    intersections[1].capacity = 2; // Semaphore lock
     init_semaphore_lock(&intersections[1]);
     
     // IntersectionC - single train (mutex)
     strcpy(intersections[2].name, "IntersectionC");
-    intersections[2].capacity = 1;
+    intersections[2].capacity = 1; // Mutex lock
     init_mutex_lock(&intersections[2]);
     
     // IntersectionD - allows 3 trains (semaphore)
     strcpy(intersections[3].name, "IntersectionD");
-    intersections[3].capacity = 3;
+    intersections[3].capacity = 3; // Semaphore lock
     init_semaphore_lock(&intersections[3]);
     
     // IntersectionE - single train (mutex)
     strcpy(intersections[4].name, "IntersectionE");
-    intersections[4].capacity = 1;
+    intersections[4].capacity = 1; // Mutex lock
     init_mutex_lock(&intersections[4]);
     
     num_intersections = 5;
@@ -108,7 +109,7 @@ void server_loop(int msgid) {
             printf("[SERVER] %s from Train %d for %s\n", msg.action, msg.train_id, msg.intersection);
             
             int idx = find_intersection(msg.intersection);
-            if (idx == -1) {
+            if (idx == -1) { // Intersection not found
                 printf("[SERVER] Intersection %s not found\n", msg.intersection);
                 continue;
             }
@@ -145,14 +146,14 @@ int main() {
 
     // Fork Train 1
     pid_t pid1 = fork();
-    if (pid1 == 0) {
+    if (pid1 == 0) { // Child process for Train 1
         run_train(msgid, 1, route1, 3);
         exit(0);
     }
 
     // Fork Train 2
     pid_t pid2 = fork();
-    if (pid2 == 0) {
+    if (pid2 == 0) { // Child process for Train 2
         run_train(msgid, 2, route2, 3);
         exit(0);
     }
@@ -162,7 +163,7 @@ int main() {
 
     // Cleanup (unreachable, but good practice if you add exit conditions)
     for (int i = 0; i < num_intersections; i++) {
-        cleanup_locks(&intersections[i]);
+        cleanup_locks(&intersections[i]); // Clean up locks
     }
 
     return 0;

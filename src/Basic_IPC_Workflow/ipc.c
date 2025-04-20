@@ -1,7 +1,8 @@
 // ipc.c
 // Author: Zachary Oyer
+// Group: B
+// Email: zachary.oyer@okstate.edu
 // Date: 4-4-2025
-// Group B
 // Implements the send_message() function for sending ACQUIRE and RELEASE
 // messages using System V message queues. Used by train processes to request
 // and release intersections.

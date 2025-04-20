@@ -1,7 +1,8 @@
 // test_rag.c
 // Author: Zachary Oyer
+// Group: B
+// Email: zachary.oyer@okstate.edu
 // Date: 4-11-2025
-// Group B
 // Test program for the Resource Allocation Graph (RAG) module.
 // This program simulates a scenario where two trains request and allocate intersections,
 // and checks for deadlocks in the system.
