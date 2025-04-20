@@ -30,6 +30,7 @@ static inline void init_si() {
 }
 //SHARED MEMORY VERSION
 void setFakeSec(int increment){
+    init_si();
     pthread_mutex_lock(&si->mutex);
     si->fakeSec += increment;
     si->fakeHour = si->fakeSec / 3600;
@@ -39,7 +40,9 @@ void setFakeSec(int increment){
 }
 
 const char* getFakeTime(void) {
+    init_si();
     pthread_mutex_lock(&si->mutex);
     snprintf(timeString, sizeof(timeString), "[%02d:%02d:%02d]", si->fakeHour, si->fakeMin, si->fakeMinSec);
+    pthread_mutex_unlock(&si->mutex);
     return timeString;
 }
