@@ -1,2 +1,9 @@
 .vscode/
 .history/
+
+# file omissions
+*.o
+*.csv
+*.log
+iLikeTrains
+train_sim
