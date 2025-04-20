@@ -7,21 +7,16 @@ static int fakeSec = 0;
 static int fakeMin = 0;
 static int fakeMinSec = 0;
 static int fakeHour = 0;
-static char timeString[11];  // "MM:SS\0"
+static char timeString[11]; // string format: [HH:MM:SS]
 
-static void setFakeSec(int seconds) {
-    fakeSec = seconds;
+void setFakeSec(int seconds) { // made public. removed static
+    fakeSec += seconds;
     fakeHour = fakeSec / 3600;
     fakeMin = (fakeSec % 3600) / 60;
     fakeMinSec = fakeSec % 60;
 }
 
-
-const char* getFakeTime(int increment) {
-
-    if(increment > 0) {
-        setFakeSec(fakeSec + increment);
-    }
+const char* getFakeTime() {
     snprintf(timeString, sizeof(timeString), "[%02d:%02d:%02d]", fakeHour, fakeMin, fakeMinSec);
     return timeString;
 }

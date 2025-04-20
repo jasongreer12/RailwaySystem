@@ -18,6 +18,7 @@
 #include <sys/stat.h>  // for stat()
 #include <sys/types.h> // for stat()
 #include <stdbool.h>   // for bool type
+#include "../Basic_IPC_Workflow/fake_sec.h" // for getFakeTime()
 
 static int log_fd = -1;
 

@@ -1,6 +1,0 @@
-sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,has_deadlock,train_state,node_count,cycle_path,edge_type
-2025-04-17 22:08:06.384736505,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,103173,,{},false,{},0,/sem_intersection_0,
-2025-04-17 22:08:06.384766742,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,103173,,{},false,{},0,/sem_intersection_1,
-2025-04-17 22:08:06.384778994,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,103173,,{},false,{},0,/sem_intersection_2,
-2025-04-17 22:08:06.384799020,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,103173,,{},false,{},0,/sem_intersection_3,
-2025-04-17 22:08:06.384808587,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,103173,,{},false,{},0,/sem_intersection_4,

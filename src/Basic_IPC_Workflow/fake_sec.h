@@ -16,6 +16,7 @@ example:
     printf(getTime(1)); //Increments time by 1 second
     printf(getTime(5)); //Increments time by 5 second
 */
-const char* getFakeTime(int increment);
+const char* getFakeTime();
+void setFakeSec(int increment);
 
 #endif

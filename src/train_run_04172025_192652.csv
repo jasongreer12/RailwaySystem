@@ -1,8 +1,0 @@
-sys_time,calling_file,calling_function,train_id,intersection_id,action,status,pid,error_msg,resource_state,has_deadlock,train_state,node_count,cycle_path,edge_type
-2025-04-17 19:26:52.263395253,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,91758,,{},false,{},0,/sem_intersection_0,
-2025-04-17 19:26:52.263432701,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,91758,,{},false,{},0,/sem_intersection_1,
-2025-04-17 19:26:52.263458257,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,91758,,{},false,{},0,/sem_intersection_2,
-2025-04-17 19:26:52.263481737,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,91758,,{},false,{},0,/sem_intersection_3,
-2025-04-17 19:26:52.263504509,Shared_Memory_Setup/Memory_Segments.c,init_shared_memory,0,SYSTEM,INIT_INTERSECTION,SUCCESS,91758,,{},false,{},0,/sem_intersection_4,
-2025-04-17 19:27:04.522656182,Railway_System.c,main,0,SYSTEM,QUEUE_CLEANUP,SUCCESS,91758,,{},false,{},0,,
-2025-04-17 19:27:04.522925113,Railway_System.c,main,0,SYSTEM,SHUTDOWN,OK,91758,,{},false,{},0,,
