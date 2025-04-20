@@ -16,57 +16,6 @@
 #include <errno.h>
 #include "../logger/csv_logger.h"
 
-// Initialize Timekeeper
-TimeKeeper* init_time(const char *shm_name, size_t *shm_size) {
-    int fd = -1;
-    TimeKeeper *st;
-
-    *shm_size = sizeof(TimeKeeper);
-    shm_unlink(shm_name);                     // remove old
-    fd = shm_open(shm_name, O_CREAT|O_RDWR, 0666);
-    if (fd < 0) { perror("shm_open time"); return NULL; }
-    if (ftruncate(fd, *shm_size) < 0) { perror("ftruncate time"); close(fd); return NULL; }
-
-    st = mmap(NULL, *shm_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-    if (st == MAP_FAILED) { perror("mmap time"); close(fd); return NULL; }
-    close(fd);
-
-    pthread_mutexattr_t mattr;
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-    pthread_mutex_init(&st->time_mutex, &mattr);
-    pthread_mutexattr_destroy(&mattr);
-
-    st->sim_time = 0;
-    return st;
-}
-
-// Destroy shared time
-void destroy_time(TimeKeeper *shared, const char *shm_name, size_t shm_size) {
-    pthread_mutex_destroy(&shared->time_mutex);
-    munmap(shared, shm_size);
-    shm_unlink(shm_name);
-}
-
-// Advance clock, return new time 
-int increment_time(TimeKeeper *shared, int delta) {
-    int t;
-    pthread_mutex_lock(&shared->time_mutex);
-    shared->sim_time += delta;
-    t = shared->sim_time;
-    pthread_mutex_unlock(&shared->time_mutex);
-    return t;
-}
-
-// Read clock without advancing
-int get_sim_time(TimeKeeper *shared) {
-    int t;
-    pthread_mutex_lock(&shared->time_mutex);
-    t = shared->sim_time;
-    pthread_mutex_unlock(&shared->time_mutex);
-    return t;
-}
-
 // Function to initialize shared memory and intersections
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
     int shm_fd;
