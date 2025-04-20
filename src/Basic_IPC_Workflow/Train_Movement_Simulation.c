@@ -13,6 +13,8 @@
 #include <sys/msg.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "logger.h"       // log_init, LOG_CLIENT, log_close
 #include "parser.h"       // getTrains, TrainEntry
@@ -32,17 +34,15 @@ typedef struct {
 
 // each trains workflow: ACQUIRE then WAIT then GRANT then TRAVEL then RELEASE then WAIT OK
 void run_train(int msgid, int train_id, char *route[], int route_len) {
-    char comp[16];
-    snprintf(comp, sizeof(comp), "TRAIN%d", train_id);
-
     Message req, resp;
     for (int i = 0; i < route_len; i++) {
         // send ACQUIRE
-        req.mtype      = 1;
-        req.train_id   = train_id;
+        req.mtype = 1;
+        req.train_id = train_id;
         strncpy(req.intersection, route[i], MAX_NAME-1);
         req.intersection[MAX_NAME-1] = '\0';
         snprintf(req.action, sizeof(req.action), "ACQUIRE");
+        
         if (msgsnd(msgid, &req, sizeof(req)-sizeof(long), 0) == -1) {
             LOG_TRAIN(train_id, "msgsnd(ACQUIRE) failed: %s", strerror(errno));
             exit(1);
@@ -85,8 +85,19 @@ void run_train(int msgid, int train_id, char *route[], int route_len) {
 }
 
 int main() {
-    // init logging
+    // init logging, which will also initialize shared memory
     log_init("simulation.log", 0);
+    
+    // Ensure proper shared memory connection before starting trains
+    if (!shared_intersections) {
+        size_t shm_size;
+        shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+        if (!shared_intersections) {
+            fprintf(stderr, "Failed to connect to shared memory\n");
+            exit(1);
+        }
+    }
+    
     LOG_SERVER("Starting train simulator");
 
     // connect to the message queue
@@ -134,19 +145,30 @@ int main() {
 
     // wait for all train children to finish
     for (int i = 0; i < train_count; i++) {
-        waitpid(pids[i], NULL, 0);
+        int status;
+        waitpid(pids[i], &status, 0);
+        if (WIFEXITED(status)) {
+            LOG_SERVER("Train %d exited with status %d", i+1, WEXITSTATUS(status));
+        }
     }
     LOG_SERVER("All %d trains have finished", train_count);
 
-    // tell the server to stop
+    // tell the Railway System to stop and wait for acknowledgment
     Message stop = { .mtype = 1, .train_id = 0 };
     memset(stop.intersection, 0, sizeof(stop.intersection));
     snprintf(stop.action, sizeof(stop.action), "STOP");
+    
     if (msgsnd(msgid, &stop, sizeof(stop) - sizeof(long), 0) == -1) {
         LOG_SERVER("Failed to send STOP: %s", strerror(errno));
     } else {
-        LOG_SERVER("Sent STOP to server");
+        LOG_SERVER("Sent STOP to Railway System");
+        // Wait for Railway System to clean up message queue
+        sleep(1);
     }
+
+    // Clean up our shared memory access
+    munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
+    shared_intersections = NULL;
 
     // exit
     LOG_SERVER("Train simulator exiting");
