@@ -1,5 +1,5 @@
 IntersectionA:1
-IntersectionB:2
+IntersectionB:1
 IntersectionC:1
 IntersectionD:3
 IntersectionE:1
