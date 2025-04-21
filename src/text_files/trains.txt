@@ -1,2 +1,2 @@
-Train1:IntersectionA,IntersectionB,IntersectionC
+Train1:IntersectionA,IntersectionC
 Train2:IntersectionB,IntersectionE
