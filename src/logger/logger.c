@@ -23,16 +23,22 @@
 #include "../Basic_IPC_Workflow/fake_sec.h" // for getFakeTime()
 #include "../Shared_Memory_Setup/Memory_Segments.h" // for SharedIntersection Struct
 
+/*
+In final iteration, the logger received the log_init and log_close functions\
+We also added quite a bit of logic to these functions to ensure clean acquisition
+and release of resources.
+*/
+
 static int log_fd = -1;
 size_t shm_size; // moved to global to reduce redundant init calls
 
 void log_init(const char *filename, int truncate) {
-    // Always clean up old shared memory on server initialization (truncate=1)
+    //clean old memory on server. Fixes issue from previous iterations
     if (truncate) {
         shm_unlink("/intersection_shm");
     }
 
-    // Initialize new shared memory
+    //check for existing shared memory, create new if not found
     if (!shared_intersections) {
         size_t shm_size = sizeof(SharedIntersection) * NUM_INTERSECTIONS;
         shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
@@ -41,7 +47,7 @@ void log_init(const char *filename, int truncate) {
             exit(1);
         }
         
-        // Reset time values
+        //reset time values on parent process
         pthread_mutex_lock(&shared_intersections[0].mutex);
         shared_intersections[0].fakeSec = 0;
         shared_intersections[0].fakeMin = 0;
@@ -50,7 +56,8 @@ void log_init(const char *filename, int truncate) {
         pthread_mutex_unlock(&shared_intersections[0].mutex);
     }
     
-    // Set up flags for opening the file
+    //use flags limit actions on file to create, write, append
+    //truncate (clear) is allowed if specified in function call
     int flags = O_CREAT | O_WRONLY | O_APPEND;
     if (truncate) {
         flags |= O_TRUNC;
@@ -94,27 +101,27 @@ void log_close(void) {
         log_fd = -1;
     }
     
+    // Close and unlink all semaphores and destroy mutexes before attempting to close shared memory
+    // Semaphores: Close
     if (shared_intersections) {
-        // First close all semaphores
         for (int i = 0; i < NUM_INTERSECTIONS; i++) {
             if (shared_intersections[i].semaphore != SEM_FAILED && shared_intersections[i].semaphore != NULL) {
                 sem_close(shared_intersections[i].semaphore);
             }
         }
-        
-        // Then unlink all semaphores
+        //unlink
         for (int i = 0; i < NUM_INTERSECTIONS; i++) {
             if (shared_intersections[i].semaphore != SEM_FAILED && shared_intersections[i].semaphore != NULL) {
                 sem_unlink(shared_intersections[i].semName);
             }
         }
 
-        // Now destroy mutexes
+        //Mutexes: destroy
         for (int i = 0; i < NUM_INTERSECTIONS; i++) {
             pthread_mutex_destroy(&shared_intersections[i].mutex);
         }
 
-        // Finally unmap and unlink shared memory
+        //unmap shared memory
         munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
         shm_unlink("/intersection_shm");
         shared_intersections = NULL;
