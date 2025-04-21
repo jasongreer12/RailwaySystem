@@ -223,10 +223,7 @@ int main()
         //adding pause to allow other processes to finish.
         sleep(1);
     }
-    else
-    {
-        LOG_SERVER("Sent STOP to server");
-    }
+    
 
     //unmap the memory to prevent memory leaks
     munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
