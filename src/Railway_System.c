@@ -81,7 +81,6 @@ int main()
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-
     // set up shared memory
     // size_t shm_size;
     // SharedIntersection *shared_intersections =
@@ -119,17 +118,17 @@ int main()
         if (locks[i].capacity == 1)
         {
             init_mutex_lock(&locks[i]);
-            //log_event("Initialized mutex for %s (capacity=1)", locks[i].name);
+            // log_event("Initialized mutex for %s (capacity=1)", locks[i].name);
             LOG_SERVER("Initialized mutex for %s (capacity=1)", locks[i].name);
         }
         else
         {
             init_semaphore_lock(&locks[i]);
-            //log_event("Initialized semaphore for %s (capacity=%d)", locks[i].name, locks[i].capacity);
+            // log_event("Initialized semaphore for %s (capacity=%d)", locks[i].name, locks[i].capacity);
             LOG_SERVER("Initialized semaphore for %s (capacity=%d)", locks[i].name, locks[i].capacity);
         }
     }
-    //LOG_SERVER("\n");
+    // LOG_SERVER("\n");
 
     // set up message queue
     int msgid = msgget(MSG_KEY, IPC_CREAT | 0666);
@@ -184,10 +183,10 @@ int main()
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
                 // attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, put train in exit queue.
-                //if (add_holder(shared_intersections, idx, req.train_id))
-                    // need to use resource allocation graph here with this function: add_request_edge(int train_id, const char* intersection)
-                    //add_request_edge(req.train_id, req.intersection);
-                    //print_graph();
+                // if (add_holder(shared_intersections, idx, req.train_id))
+                // need to use resource allocation graph here with this function: add_request_edge(int train_id, const char* intersection)
+                // add_request_edge(req.train_id, req.intersection);
+                // print_graph();
                 // attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, enqueue the train to wait.
                 // 8:08 i think were having an issue with trains requesting an intersection that is already occupied
                 // if (isHolder(shared_intersections, idx, req.train_id)) //DIFFERENT
@@ -206,7 +205,7 @@ int main()
                     if (result == 0)
                     {
                         strncpy(resp.action, "GRANT", sizeof(resp.action) - 1);
-                        nextAcquire[resp.train_id - 1]++; //DIFFERENT
+                        nextAcquire[resp.train_id - 1]++; // DIFFERENT
                         // now = increment_time(clk, 1);
                         // format_timestamp(now, ts);
                         setFakeSec(1);
@@ -216,31 +215,31 @@ int main()
                     else
                     {
                         // if local lock acquisition fails remove the holder and queue the train
-                        remove_holder(shared_intersections, idx, req.train_id); //DIFFERENT
+                        remove_holder(shared_intersections, idx, req.train_id); // DIFFERENT
                         enqueue_waiter(shared_intersections, idx, req.train_id);
                         strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
                         LOG_SERVER("WAITING: Local lock error, Train %d queued for %s",
                                    req.train_id, req.intersection);
                         // now = increment_time(clk, 1);
                         // format_timestamp(now, ts);
-                        //setFakeSec(1); //DIFFERENT
-                        //LOG_SERVER("%s WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
+                        // setFakeSec(1); //DIFFERENT
+                        // LOG_SERVER("%s WAITING: Local lock error, Train %d queued for %s", req.train_id, req.intersection);
                     }
                 }
                 else
                 {
-                    
+
                     // intersection at capacity add the train to the waiting queue
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                    //LOG_SERVER("WAITING: full, Train %d queued for %s", req.train_id, req.intersection);
-                    // now = increment_time(clk, 1);
-                    // format_timestamp(now, ts);
-                    setFakeSec(1); //DIFFERENT
+                    // LOG_SERVER("WAITING: full, Train %d queued for %s", req.train_id, req.intersection);
+                    //  now = increment_time(clk, 1);
+                    //  format_timestamp(now, ts);
+                    setFakeSec(1); // DIFFERENT
                     LOG_SERVER("%s is full. Train %d added to wait queue.", req.intersection, req.train_id);
                     if (detect_deadlock())
                     { // check for deadlock since intersection is at capacity
-                        LOG_SERVER("Deadlock detected! Cycle: Train%d <> Train%d.\n", req.train_id, req.train_id);
+                        LOG_SERVER("Deadlock detected!\n");
                         // need to add logic here to remove intersection from train
                         // get intersection index involved with deadlock
                         // get the train that has desired intersection intersection
@@ -277,6 +276,7 @@ int main()
 
             else // RELEASE
             {
+                /*
                 int result = release_lock(&locks[idx]);
                 if (result == 0)
                 {
@@ -373,13 +373,47 @@ int main()
                     // format_timestamp(now, ts);
                     setFakeSec(1);
                     LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
+                }*/
+                int result = release_lock(&locks[idx]);
+                if (result != 0 || !remove_holder(shared_intersections, idx, req.train_id))
+                {
+                    strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
+                    LOG_SERVER("Failed to release %s from Train %d",
+                               req.intersection, req.train_id);
                 }
                 else
                 {
-                    strncpy(resp.action, "FAIL", sizeof(resp.action) - 1);
-                    LOG_SERVER("Failed to remove Train %d from holders of %s",
-                               req.train_id, req.intersection);
-                    //LOG_SERVER("Failed to remove Train %d from holders of %s", req.train_id, req.intersection);
+                    // acknowledge the releaser
+                    strncpy(resp.action, "OK", sizeof(resp.action) - 1);
+                    LOG_SERVER("Released %s from Train %d",
+                               req.intersection, req.train_id);
+
+                    int next_train = dequeue_waiter(shared_intersections, idx);
+                    if (next_train != -1)
+                    {
+                        add_holder(shared_intersections, idx, next_train);
+                        // send a GRANT
+                        Message grant_msg = {0};
+                        grant_msg.mtype = next_train + 100;
+                        grant_msg.train_id = next_train;
+                        strncpy(grant_msg.intersection,
+                                req.intersection,
+                                sizeof(grant_msg.intersection) - 1);
+                        snprintf(grant_msg.action,
+                                 sizeof(grant_msg.action),
+                                 "GRANT");
+                        if (msgsnd(msgid, &grant_msg,
+                                   sizeof(grant_msg) - sizeof(long), 0) == -1)
+                        {
+                            LOG_SERVER("msgsnd(GRANT) to Train %d failed: %s",
+                                       next_train, strerror(errno));
+                        }
+                        else
+                        {
+                            LOG_SERVER("GRANTED %s to Train %d",
+                                       req.intersection, next_train);
+                        }
+                    }
                 }
             }
             // else
@@ -389,27 +423,26 @@ int main()
             //              req.intersection, req.train_id);
             // }
         }
-    }
 
-    // Only increment time when sending final response if we're changing state
-    if (strcmp(resp.action, "GRANT") == 0 || strcmp(resp.action, "OK") == 0)
-    {
-        setFakeSec(1);
-    }
+        // Only increment time when sending final response if we're changing state
+        if (strcmp(resp.action, "GRANT") == 0 || strcmp(resp.action, "OK") == 0)
+        {
+            setFakeSec(1);
+        }
 
-    if (msgsnd(msgid, &resp, sizeof(resp) - sizeof(long), 0) == -1)
-    {
-        LOG_SERVER("msgsnd failed: %s", strerror(errno));
-        perror("[SERVER] msgsnd");
-    }
-    else
-    {
-        LOG_SERVER("Sent response: Train %d \"%s\" on %s",
+        if (msgsnd(msgid, &resp, sizeof(resp) - sizeof(long), 0) == -1)
+        {
+            LOG_SERVER("msgsnd failed: %s", strerror(errno));
+            perror("[SERVER] msgsnd");
+        }
+        else
+        {
+            LOG_SERVER("Sent response: Train %d \"%s\" on %s",
+                       resp.train_id, resp.action, resp.intersection);
+            printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(),
                    resp.train_id, resp.action, resp.intersection);
-        printf("%s [SERVER] Sent response: Train %d \"%s\" on %s\n", getFakeTime(),
-               resp.train_id, resp.action, resp.intersection);
+        }
     }
-
     // clean the queue only after receiving STOP signal
     if (msgctl(msgid, IPC_RMID, NULL) == -1)
     {
