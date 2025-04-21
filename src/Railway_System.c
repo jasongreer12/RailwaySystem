@@ -18,11 +18,11 @@ Updated 4/13/2025
 
 #include "logger/logger.h"                         // Jason Greer
 #include "logger/csv_logger.h"                     // Jarett Woodard
-#include "Basic_IPC_Workflow/ipc.h"                // Zach Oyer
+#include "Basic_IPC_Workflow/ipc.h"                // Zachary Oyer
 #include "parser/parser.h"                         // Jarett Woodard
 #include "Basic_IPC_Workflow/intersection_locks.h" // Jake Pinell
 #include "Shared_Memory_Setup/Memory_Segments.h"   // Steve Kuria
-#include "Basic_IPC_Workflow/resource_allocation_graph.h"
+#include "Basic_IPC_Workflow/resource_allocation_graph.h"  // Zachary Oyer
 #include "Basic_IPC_Workflow/fake_sec.h"           // Jake Pinell
 
 // This file uses code from server.c authored by Jason Greer
