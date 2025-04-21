@@ -13,10 +13,13 @@
 #include <sys/msg.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "logger.h" // log_init, LOG_CLIENT, log_close
 #include "parser.h" // getTrains, TrainEntry
 #include "resource_allocation_graph.h"
+#include "../Shared_Memory_Setup/Memory_Segments.h" // SharedIntersection
 
 #define MSG_KEY 1234
 #define MAX_NAME 64
@@ -31,8 +34,8 @@ typedef struct
 } Message;
 
 // each trains workflow: ACQUIRE then WAIT then GRANT then TRAVEL then RELEASE then WAIT OK
-void run_train(int msgid, int train_id, char *route[], int route_len)
-{
+void run_train(int msgid, int train_id, char *route[], int route_len) {
+    //moved generation of comp string to macro in logger.h
     Message req, resp;
 
     // request each intersection then wait for GRANT
@@ -44,8 +47,9 @@ void run_train(int msgid, int train_id, char *route[], int route_len)
         strncpy(req.intersection, route[i], MAX_NAME - 1);
         req.intersection[MAX_NAME - 1] = '\0';
         snprintf(req.action, sizeof(req.action), "ACQUIRE");
-        if (msgsnd(msgid, &req, sizeof(req) - sizeof(long), 0) == -1)
-        {
+        
+        if (msgsnd(msgid, &req, sizeof(req)-sizeof(long), 0) == -1) {
+        
             LOG_TRAIN(train_id, "msgsnd(ACQUIRE) failed: %s", strerror(errno));
             exit(1);
         }
@@ -123,6 +127,18 @@ int main()
 {
     // init logging
     log_init("simulation.log", 0);
+    
+    //verify shared memory is available. initialize if not available
+    if (!shared_intersections) {
+        size_t shm_size;
+        shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+        if (!shared_intersections) {
+            fprintf(stderr, "Failed to connect to shared memory\n");
+            exit(1);
+        }
+    }
+    
+    LOG_SERVER("Starting train simulator");
     // LOG_SERVER("Starting train simulator");
 
     // connect to the message queue
@@ -174,24 +190,47 @@ int main()
     }
 
     // wait for all train children to finish
-    for (int i = 0; i < train_count; i++)
-    {
-        waitpid(pids[i], NULL, 0);
-    }
+    int remaining_trains = train_count;
+    while (remaining_trains > 0) { //force wait without forcing order
+        int status;
+        pid_t finished_pid = waitpid(-1, &status, 0);  // Wait for any child to finish
+        
+        for (int i = 0; i < train_count; i++) {
+            if (pids[i] == finished_pid) {
+                if (WIFEXITED(status)) {//if exited, log exit status
+                    LOG_SERVER("Train %d exited with status %d", i+1, WEXITSTATUS(status));
+                }
+                break;
+            }
+        }
+        remaining_trains--; //decrement remaining trains
+    
     LOG_SERVER("All %d trains have finished", train_count);
 
+    // tell the Railway System to stop and wait for acknowledgment
+    Message stop = { .mtype = 1, .train_id = 0 };
     // tell the server to stop
     Message stop = {.mtype = 1, .train_id = 0};
     memset(stop.intersection, 0, sizeof(stop.intersection));
     snprintf(stop.action, sizeof(stop.action), "STOP");
-    if (msgsnd(msgid, &stop, sizeof(stop) - sizeof(long), 0) == -1)
-    {
+    
+    if (msgsnd(msgid, &stop, sizeof(stop) - sizeof(long), 0) == -1) {
+    
         LOG_SERVER("Failed to send STOP: %s", strerror(errno));
+    } else {
+        LOG_SERVER("Sent STOP to Railway System");
+        //log kept printing after complete because of concurrent processes
+        //adding pause to allow other processes to finish.
+        sleep(1);
     }
     else
     {
         LOG_SERVER("Sent STOP to server");
     }
+
+    //unmap the memory to prevent memory leaks
+    munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
+    shared_intersections = NULL;
 
     // exit
     LOG_SERVER("Train simulator exiting");

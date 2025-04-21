@@ -11,6 +11,20 @@
 #include <fcntl.h>
 #include "fake_sec.h"
 
+//local time functions. Saves by not have to declare the
+//shared intersection every time we need to call the time functions.
+// void increaseTime(int inc){
+//     SharedIntersection *si = &shared_intersections[0];
+//     setFakeSec(inc);
+// }
+
+// char *getTime(){
+//     SharedIntersection *si = &shared_intersections[0];
+//     char *timeString = malloc(11);
+//     snprintf(timeString, 11, "%s", getFakeTime());
+//     return timeString;
+// }
+
 // Initialize mutex for intersection with capacity 1
 bool init_mutex_lock(Intersection *intersection) {
     if (!intersection) {
@@ -24,7 +38,7 @@ bool init_mutex_lock(Intersection *intersection) {
         return false;
     }
     
-    printf("%s Initialized mutex for intersection %s (capacity 1)\n", getFakeTime(0), intersection->name);
+    printf("%s Initialized mutex for intersection %s (capacity 1)\n", getFakeTime(), intersection->name);
     return true;
 }
 
@@ -52,8 +66,7 @@ bool init_semaphore_lock(Intersection *intersection) {
         return false;
     }
     
-    printf("%s Initialized semaphore for intersection %s (capacity %d)\n",
-            getFakeTime(0), intersection->name, intersection->capacity);
+    printf("%s Initialized semaphore for intersection %s (capacity %d)\n",getFakeTime(), intersection->name, intersection->capacity);
     return true;
 }
 

@@ -4,7 +4,8 @@
 // skuria@okstate.edu
 // 4-3-2025
 // This code initializes a shared memory segment containing multiple intersection structures—with each structure configured with a mutex and semaphore—and provides functions to set up and clean up these resources using POSIX shared memory APIs.
-// 4-11-25: Created intiialized functions to track intersections
+// 4-11-25: Created intiialized functions to track held intersections
+// 4-19-25: Collaborated with Jarret to implement a simulated clock and timekeeping functions to track what time the trains arrive and leave intersections. This includes a mutex to protect the time fields and a function to increment the time.
 #include "Memory_Segments.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,78 +17,34 @@
 #include <errno.h>
 #include "../logger/csv_logger.h"
 
-// Initialize Timekeeper
-// TimeKeeper* init_time(const char *shm_name, size_t *shm_size) {
-//     int fd = -1;
-//     TimeKeeper *st;
-
-//     *shm_size = sizeof(TimeKeeper);
-//     shm_unlink(shm_name);                     // remove old
-//     fd = shm_open(shm_name, O_CREAT|O_RDWR, 0666);
-//     if (fd < 0) { perror("shm_open time"); return NULL; }
-//     if (ftruncate(fd, *shm_size) < 0) { perror("ftruncate time"); close(fd); return NULL; }
-
-//     st = mmap(NULL, *shm_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-//     if (st == MAP_FAILED) { perror("mmap time"); close(fd); return NULL; }
-//     close(fd);
-
-//     pthread_mutexattr_t mattr;
-//     pthread_mutexattr_init(&mattr);
-//     pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-//     pthread_mutex_init(&st->time_mutex, &mattr);
-//     pthread_mutexattr_destroy(&mattr);
-
-//     st->sim_time = 0;
-//     return st;
-// }
-
-// // Destroy shared time
-// void destroy_time(TimeKeeper *shared, const char *shm_name, size_t shm_size) {
-//     pthread_mutex_destroy(&shared->time_mutex);
-//     munmap(shared, shm_size);
-//     shm_unlink(shm_name);
-// }
-
-// Advance clock, return new time 
-// int increment_time(TimeKeeper *shared, int delta) {
-//     int t;
-//     pthread_mutex_lock(&shared->time_mutex);
-//     shared->sim_time += delta;
-//     t = shared->sim_time;
-//     pthread_mutex_unlock(&shared->time_mutex);
-//     return t;
-// }
-
-// Read clock without advancing
-// int get_sim_time(TimeKeeper *shared) {
-//     int t;
-//     pthread_mutex_lock(&shared->time_mutex);
-//     t = shared->sim_time;
-//     pthread_mutex_unlock(&shared->time_mutex);
-//     return t;
-// }
+SharedIntersection* shared_intersections = NULL;
 
 // Function to initialize shared memory and intersections
 SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
     int shm_fd;
-    SharedIntersection *shared_intersections;
 
+    // Calculate total size for all intersections
     *shm_size = sizeof(SharedIntersection) * NUM_INTERSECTIONS;
 
-    shm_unlink(shm_name);  // Clean old shm if it exists
-
-    shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+    // Tries to open an existing shared memory object
+    shm_fd = shm_open(shm_name, O_RDWR, 0666);
     if (shm_fd == -1) {
-        perror("shm_open");
-        return NULL;
+        // If it doesn't exist, remove any stale object and create a new one
+        shm_unlink(shm_name);  // Clean old shm if it exists
+        shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+        if (shm_fd == -1) {
+            perror("shm_open");
+            return NULL;
     }
-
+    // Set the size of the new shared memory object
     if (ftruncate(shm_fd, *shm_size) == -1) {
         perror("ftruncate");
         close(shm_fd);
         return NULL;
     }
+}
 
+    // Map the shared memory object into address space
     shared_intersections = mmap(NULL, *shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (shared_intersections == MAP_FAILED) {
         perror("mmap");
@@ -95,57 +52,84 @@ SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
         return NULL;
     }
 
-    for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+    // The first intersection's fake time fields are zero only on first inititializaiton
+    if (shared_intersections[0].fakeSec == 0 && shared_intersections[0].fakeMin == 0 && 
+        shared_intersections[0].fakeHour == 0) {
+    
+    // Initialize process-shared mutex attributes
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
 
-        if (pthread_mutex_init(&shared_intersections[i].mutex, NULL) != 0) {
-            perror("pthread_mutex_init");
+    // Initialize timekeeping mutex
+    if (pthread_mutex_init(&shared_intersections[0].mutex, &mutex_attr) != 0) {
+        perror("pthread_mutex_init for time");
             return NULL;
         }
+        pthread_mutexattr_destroy(&mutex_attr);
 
-        shared_intersections[i].capacity = (i % 2 == 0) ? 1 : 3;
+        // Set initial fake time to 00:00:00
+        shared_intersections[0].fakeSec = 0;
+        shared_intersections[0].fakeMin = 0;
+        shared_intersections[0].fakeMinSec = 0;
+        shared_intersections[0].fakeHour = 0;
 
-        snprintf(shared_intersections[i].semName, sizeof(shared_intersections[i].semName),
-                 "/sem_intersection_%d", i);
+        // Initialize each intersection entry
+        for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+            SharedIntersection *si = &shared_intersections[i];
+            
+            // For all but the first, set up a separate mutex
+            if (i > 0) {
+                pthread_mutexattr_t attr;
+                pthread_mutexattr_init(&attr);
+                pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+                if (pthread_mutex_init(&si->mutex, &attr) != 0) {
+                    perror("pthread_mutex_init");
+                    return NULL;
+                }
+                pthread_mutexattr_destroy(&attr);
+            }
 
-        sem_unlink(shared_intersections[i].semName); // In case it already exists
+            // Set capacity and name
+            si->capacity = (i % 2 == 0) ? 1 : 3;
+            // Build a unique semaphore name for this intersection
+            snprintf(si->semName, sizeof(si->semName), "/sem_intersection_%d", i);
+            sem_unlink(si->semName); // In case it already exists
 
-        shared_intersections[i].semaphore = sem_open(
-            shared_intersections[i].semName,
+            // Create a named semaphore with initial value == capacity
+            si->semaphore = sem_open(
+                si->semName,
             O_CREAT,
             0666,
-            shared_intersections[i].capacity
+            si->capacity
         );
 
-        if (shared_intersections[i].semaphore == SEM_FAILED) {
+        if (si->semaphore == SEM_FAILED) {
             perror("sem_open");
             return NULL;
         }
 
-        //Set capacity and name
-        SharedIntersection *si = &shared_intersections[i];
-        si->capacity = (i % 2 == 0) ? 1 : 3;
-        snprintf(si->semName, sizeof(si->semName), "/sem_intersection_%d", i);
-
-        // initialize tracking arrays
-        si->held_count  = 0;
-        si->wait_count  = 0;
-        memset(si->holders,    0, sizeof(si->holders));
+        // Initialize tracking counts and queues
+        si->held_count = 0;
+        si->wait_count = 0;
+        memset(si->holders, 0, sizeof(si->holders));
         memset(si->wait_queue, 0, sizeof(si->wait_queue));
 
-        // Log the initialization of each shared intersection to the CSV
-        LOG_CSV(0, "SYSTEM", "INIT_INTERSECTION", "SUCCESS", getpid(), NULL, NULL, NULL, 0, false, 0, si->semName, NULL);
     }
-    
-    close(shm_fd); // Close the file descriptor (not the memory)
+}
+    // Close the file descriptor after mmap
+    close(shm_fd);
     return shared_intersections;
 }
 
-// Function to clean up resources
+// Function to clean up shared memory
 void destroy_shared_memory(SharedIntersection *shared_intersections, const char *shm_name, size_t shm_size) {
     for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+        // Destroy each mutex
         if (pthread_mutex_destroy(&shared_intersections[i].mutex) != 0) {
             perror("pthread_mutex_destroy");
         }
+        // Close and unlink each semaphore
         if (sem_close(shared_intersections[i].semaphore) == -1) {
             perror("sem_close");
         }
@@ -154,6 +138,7 @@ void destroy_shared_memory(SharedIntersection *shared_intersections, const char 
         }
     }
 
+    // Unmap the shared memory and unlink the object
     if (munmap(shared_intersections, shm_size) == -1) {
         perror("munmap");
     }
@@ -164,9 +149,9 @@ void destroy_shared_memory(SharedIntersection *shared_intersections, const char 
 
 }
 
-//Tracking functions
+// Tracking functions:
 
-//Attempts to add train_id as a holder of intersection idx. Returns 1 if added, 0 if at capacity
+// Attempts to add train_id as a holder of intersection idx. Returns 1 if added, 0 if at capacity
 int add_holder(SharedIntersection *shared, int idx, int train_id) {
     SharedIntersection *si = &shared[idx];
     pthread_mutex_lock(&si->mutex);
@@ -179,7 +164,7 @@ int add_holder(SharedIntersection *shared, int idx, int train_id) {
     return 0;
 }
 
-//remove train_id from holders. Returns 1 on sucess, 0 if not found 
+// Remove train_id from holders. Returns 1 on sucess, 0 if not found 
 
 int remove_holder(SharedIntersection *shared, int idx, int train_id) {
     SharedIntersection *si = &shared[idx];
