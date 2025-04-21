@@ -66,24 +66,6 @@ int main(){
     strncpy(sys_msg.action, "STARTUP", sizeof(sys_msg.action) - 1);
     sys_msg.action[sizeof(sys_msg.action) - 1] = '\0';
 
-    // Initialize simulated clock
-    // size_t time_size;
-    // TimeKeeper *clk = init_time(TIME_SHM_NAME, &time_size);
-    // if (!clk) { fprintf(stderr, "Failed time shm\n"); exit(1); }
-    
-    // set up shared memory 
-    // MOVED TO LOGGER FILE
-    // size_t shm_size;
-    // SharedIntersection *shared_intersections =
-    //     init_shared_memory("/intersection_shm", &shm_size);
-    // if (!shared_intersections)
-    // {
-    //     LOG_SERVER("Failed to initialize shared memory");
-    //     fprintf(stderr, "[SERVER] Failed to initialize shared memory.\n");
-    //     exit(1);
-    // }
-    // LOG_SERVER("Shared memory initialized");
-
     // parse trains
     TrainEntry trains[LINE_MAX];
     int trainCount = getTrains(trains);
@@ -168,7 +150,7 @@ int main(){
         }
         else
         {
-            // process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
+ //here     // process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
                 //attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, put train in exit queue.
