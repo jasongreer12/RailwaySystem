@@ -14,7 +14,9 @@
 extern SharedIntersection *shared_intersections;
 extern size_t shm_size; // moved to global to reduce redundant init calls
 
+/*Added initialize and close log functions to centralize all log operations.*/
 void log_init(const char *filename, int truncate);
+void log_close(void);
 
 /* Write a log event.
  * The 'component' is a string that identifies the source (e.g., "SERVER", "TRAIN1").
@@ -22,15 +24,11 @@ void log_init(const char *filename, int truncate);
  */
 void log_event(const char *component, const char *fmt, ...);
 
-/* Close the log file. */
-void log_close(void);
+
 
 /* Convenience macros for common components.
- */
-
-/*
-original macro
-#define LOG_SERVER(fmt, ...) log_event("SERVER", fmt, ##__VA_ARGS__) //adjusting macro to incorporate time in log
+Updated 4.20.2025
+Updated macros to include calls to get timeString
 Updated by jarett on 4.19 to include time string
 */
 #define LOG_SERVER(fmt, ...) do { \
