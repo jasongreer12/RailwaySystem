@@ -34,11 +34,12 @@ typedef struct {
 
 // each trains workflow: ACQUIRE then WAIT then GRANT then TRAVEL then RELEASE then WAIT OK
 void run_train(int msgid, int train_id, char *route[], int route_len) {
+    //moved generation of comp string to macro in logger.h
     Message req, resp;
     for (int i = 0; i < route_len; i++) {
         // send ACQUIRE
-        req.mtype = 1;
-        req.train_id = train_id;
+        req.mtype      = 1;
+        req.train_id   = train_id;
         strncpy(req.intersection, route[i], MAX_NAME-1);
         req.intersection[MAX_NAME-1] = '\0';
         snprintf(req.action, sizeof(req.action), "ACQUIRE");
@@ -85,10 +86,10 @@ void run_train(int msgid, int train_id, char *route[], int route_len) {
 }
 
 int main() {
-    // init logging, which will also initialize shared memory
+    // init logging
     log_init("simulation.log", 0);
     
-    // Ensure proper shared memory connection before starting trains
+    //verify shared memory is available. initialize if not available
     if (!shared_intersections) {
         size_t shm_size;
         shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
@@ -144,12 +145,21 @@ int main() {
     }
 
     // wait for all train children to finish
-    for (int i = 0; i < train_count; i++) {
+    int remaining_trains = train_count;
+    while (remaining_trains > 0) {
         int status;
-        waitpid(pids[i], &status, 0);
-        if (WIFEXITED(status)) {
-            LOG_SERVER("Train %d exited with status %d", i+1, WEXITSTATUS(status));
+        pid_t finished_pid = waitpid(-1, &status, 0);  // Wait for any child to finish
+        
+        // Find which train this was
+        for (int i = 0; i < train_count; i++) {
+            if (pids[i] == finished_pid) {
+                if (WIFEXITED(status)) {
+                    LOG_SERVER("Train %d exited with status %d", i+1, WEXITSTATUS(status));
+                }
+                break;
+            }
         }
+        remaining_trains--;
     }
     LOG_SERVER("All %d trains have finished", train_count);
 
