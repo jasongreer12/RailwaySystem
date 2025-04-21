@@ -153,12 +153,12 @@ int main(){
         resp.train_id = req.train_id;
         strncpy(resp.intersection, req.intersection, sizeof(resp.intersection) - 1);
 
-        // Increment time for new request
+        //increments time in shared memory through logger.h
         setFakeSec(1);
-        LOG_SERVER("Received: Train %d requests \"%s\" on %s",
-                   req.train_id, req.action, req.intersection);
+        //Logs request. gettime is called inside the macro
+        LOG_SERVER("Received: Train %d requests \"%s\" on %s",req.train_id, req.action, req.intersection);
 
-        // find which lock to use
+        //find which lock to use
         int idx = find_intersection_index(iEntries, intersectionCount, req.intersection);
         if (idx < 0)
         {
@@ -170,7 +170,7 @@ int main(){
             // process ACQUIRE or RELEASE on locks[idx] and update shared memory tracking
             if (strcmp(req.action, "ACQUIRE") == 0)
             {
-                // attempt to add the train as a holder in shared memory
+                //attempt to add the train as a holder in shared memory. If successful, try to acquire the local lock. Otherwise, put train in exit queue.
                 if (add_holder(shared_intersections, idx, req.train_id))
                 {
                     int result = acquire_lock(&locks[idx]);
@@ -195,10 +195,10 @@ int main(){
                     // intersection at capacity add the train to the waiting queue
                     enqueue_waiter(shared_intersections, idx, req.train_id);
                     strncpy(resp.action, "WAIT", sizeof(resp.action) - 1);
-                    LOG_SERVER("WAITING: full, Train %d queued for %s", 
-                             req.train_id, req.intersection);
+                    LOG_SERVER("WAITING: full, Train %d queued for %s",req.train_id, req.intersection);
                 }
             }
+
             else // RELEASE
             {
                 int result = release_lock(&locks[idx]);
@@ -206,10 +206,11 @@ int main(){
                 {
                     if (remove_holder(shared_intersections, idx, req.train_id))
                     {
+
                         strncpy(resp.action, "OK", sizeof(resp.action) - 1);
                         LOG_SERVER("Released %s from Train %d", req.intersection, req.train_id);
 
-                        // Check for waiting trains
+                        //check of any trains are waiting
                         int next_train = dequeue_waiter(shared_intersections, idx);
                         if (next_train != -1)
                         {
