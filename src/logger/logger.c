@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define _GNU_SOURCE
-#include "logger.h" // intialize log
+#include "logger.h" // initialize log
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,24 +19,39 @@
 #include <sys/stat.h>  // for stat()
 #include <sys/types.h> // for stat()
 #include <stdbool.h>   // for bool type
+#include <sys/mman.h>
 #include "../Basic_IPC_Workflow/fake_sec.h" // for getFakeTime()
 #include "../Shared_Memory_Setup/Memory_Segments.h" // for SharedIntersection Struct
 
 static int log_fd = -1;
-// SharedIntersection *shared_intersections = NULL;
 size_t shm_size; // moved to global to reduce redundant init calls
 
 void log_init(const char *filename, int truncate) {
-    // initialize shared memory here to reduce redundant init calls
-    shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+    // Always clean up old shared memory on server initialization (truncate=1)
+    if (truncate) {
+        shm_unlink("/intersection_shm");
+    }
+
+    // Initialize new shared memory
     if (!shared_intersections) {
-        fprintf(stderr, "Failed to initialize shared memory.\n");
-        exit(1);
+        size_t shm_size = sizeof(SharedIntersection) * NUM_INTERSECTIONS;
+        shared_intersections = init_shared_memory("/intersection_shm", &shm_size);
+        if (!shared_intersections) {
+            fprintf(stderr, "Failed to initialize shared memory.\n");
+            exit(1);
+        }
+        
+        // Reset time values
+        pthread_mutex_lock(&shared_intersections[0].mutex);
+        shared_intersections[0].fakeSec = 0;
+        shared_intersections[0].fakeMin = 0;
+        shared_intersections[0].fakeMinSec = 0;
+        shared_intersections[0].fakeHour = 0;
+        pthread_mutex_unlock(&shared_intersections[0].mutex);
     }
     
-    // Set up flags for opening the file. We always open for write and append.
+    // Set up flags for opening the file
     int flags = O_CREAT | O_WRONLY | O_APPEND;
-    // If truncate flag is set (non-zero), add O_TRUNC to always create a new file.
     if (truncate) {
         flags |= O_TRUNC;
     }
@@ -80,7 +95,28 @@ void log_close(void) {
     }
     
     if (shared_intersections) {
-        destroy_shared_memory(shared_intersections, "/intersection_shm", shm_size);
+        // First close all semaphores
+        for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+            if (shared_intersections[i].semaphore != SEM_FAILED && shared_intersections[i].semaphore != NULL) {
+                sem_close(shared_intersections[i].semaphore);
+            }
+        }
+        
+        // Then unlink all semaphores
+        for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+            if (shared_intersections[i].semaphore != SEM_FAILED && shared_intersections[i].semaphore != NULL) {
+                sem_unlink(shared_intersections[i].semName);
+            }
+        }
+
+        // Now destroy mutexes
+        for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+            pthread_mutex_destroy(&shared_intersections[i].mutex);
+        }
+
+        // Finally unmap and unlink shared memory
+        munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
+        shm_unlink("/intersection_shm");
         shared_intersections = NULL;
     }
 }

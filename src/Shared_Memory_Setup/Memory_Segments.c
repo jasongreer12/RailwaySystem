@@ -104,7 +104,7 @@ SharedIntersection* init_shared_memory(const char *shm_name, size_t *shm_size) {
     }
 }
     
-    close(shm_fd); // Close the file descriptor (not the memory)
+    close(shm_fd);
     return shared_intersections;
 }
 
