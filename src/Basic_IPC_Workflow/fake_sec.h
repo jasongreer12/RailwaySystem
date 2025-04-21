@@ -4,20 +4,17 @@
 #include "../Shared_Memory_Setup/Memory_Segments.h"
 
 /*
-INITIAL IMPLEMENTATION OF TIMESTAMPING
-getTime can be called within any of the print function calls to get the current time and display it.
-If the time needs to be incremented, set the increment parameter to a value greater than 0. Otherwise, set it to 0.
-It can be called directly or as a parameter to the print function.
+TIMESTAMPING FOR LOGGING
+getFakeTime can be used in either of the formats below.
 example:
-    printf("Time: %s\n", getTime(0)); //Gets current time
-    printf("Time: %s\n", getTime(1)); //Increments time by 1 second
-    printf("Time: %s\n", getTime(5)); //Increments time by 5 seconds
+    printf("Time: %s\n", getFakeTime()); //Gets current time
+    printf(getFakeTime()); //Gets current time
 
-    -OR-
-
-    printf(getTime(0)); //Gets current time
-    printf(getTime(1)); //Increments time by 1 second
-    printf(getTime(5)); //Increments time by 5 second
+setFakeSec can be used to increment the time by a given integer amount.
+example:
+    setFakeSec(1); //increments time by 1 second
+    setFakeSec(4); //increments time by 1 minute
+  
 */
 
 /* 
