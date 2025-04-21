@@ -146,20 +146,19 @@ int main() {
 
     // wait for all train children to finish
     int remaining_trains = train_count;
-    while (remaining_trains > 0) {
+    while (remaining_trains > 0) { //force wait without forcing order
         int status;
         pid_t finished_pid = waitpid(-1, &status, 0);  // Wait for any child to finish
         
-        // Find which train this was
         for (int i = 0; i < train_count; i++) {
             if (pids[i] == finished_pid) {
-                if (WIFEXITED(status)) {
+                if (WIFEXITED(status)) {//if exited, log exit status
                     LOG_SERVER("Train %d exited with status %d", i+1, WEXITSTATUS(status));
                 }
                 break;
             }
         }
-        remaining_trains--;
+        remaining_trains--; //decrement remaining trains
     }
     LOG_SERVER("All %d trains have finished", train_count);
 
@@ -172,11 +171,12 @@ int main() {
         LOG_SERVER("Failed to send STOP: %s", strerror(errno));
     } else {
         LOG_SERVER("Sent STOP to Railway System");
-        // Wait for Railway System to clean up message queue
+        //log kept printing after complete because of concurrent processes
+        //adding pause to allow other processes to finish.
         sleep(1);
     }
 
-    // Clean up our shared memory access
+    //unmap the memory to prevent memory leaks
     munmap(shared_intersections, sizeof(SharedIntersection) * NUM_INTERSECTIONS);
     shared_intersections = NULL;
 
